@@ -60,27 +60,17 @@ jobs:
           )
           if bump not in ("auto", "patch", "minor", "major", ""):
               bump = "auto"
-          if bump in ("major",):
+          # Patch bump by default. Use a minor/major bump only when explicitly
+          # requested via the workflow_dispatch input (run the workflow
+          # manually in the Actions tab). Do NOT scan commit messages for
+          # #minor/#major tags — that is fragile (a docs commit mentioning the
+          # keywords would bump the version).
+          if bump == "major":
               major, minor, patch = major + 1, 0, 0
-          elif bump in ("minor",):
+          elif bump == "minor":
               minor, patch = minor + 1, 0
           else:
-              # auto: scan commit subjects+bodies since the last tag for #minor/#major
-              logs = ""
-              if latest != "v0.0.0":
-                  try:
-                      logs = subprocess.check_output(
-                          ["git", "log", f"{latest}..HEAD", "--pretty=%s%n%b"],
-                          text=True, errors="replace",
-                      ).lower()
-                  except Exception:
-                      logs = ""
-              if "#major" in logs:
-                  major, minor, patch = major + 1, 0, 0
-              elif "#minor" in logs:
-                  minor, patch = minor + 1, 0
-              else:
-                  patch += 1
+              patch += 1
           ver = f"{major}.{minor}.{patch}"
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
               f.write(f"version={ver}\n")
