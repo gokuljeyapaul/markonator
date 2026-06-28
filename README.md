@@ -240,6 +240,37 @@ Contributions welcome. Fork → branch → PR.
 
 ---
 
+## Credits & open-source dependencies
+
+Markonator is MIT-licensed and built on excellent open-source software.
+
+**Bundled in the extension/app** (shipped in `vendor/`/`vendor/fonts/`):
+
+| Dependency | License | Used for |
+| --- | --- | --- |
+| [marked](https://github.com/markedjs/marked) | MIT | Markdown → HTML parsing |
+| [DOMPurify](https://github.com/cure53/DOMPurify) | MPL-2.0 OR Apache-2.0 (we use Apache-2.0) | XSS-safe HTML sanitization |
+| [Inter](https://github.com/rsms/inter) | OFL-1.1 | Content font |
+| [Lora](https://github.com/cyrealtype/Lora-Cyrillic) | OFL-1.1 | Content font |
+| [JetBrains Mono](https://www.jetbrains.com/lp/mono/) | OFL-1.1 | Content font |
+| [Atkinson Hyperlegible](https://github.com/googlefonts/atkinson) | OFL-1.1 | Content font |
+
+Full license texts are in `vendor/` (`marked.LICENSE.md`, `purify.LICENSE`) and
+`vendor/fonts/OFL.txt`; see also `vendor/THIRD_PARTY_LICENSES.md`.
+
+**Build & test tools** (not shipped in the extension):
+
+| Tool | License | Used for |
+| --- | --- | --- |
+| [Playwright](https://playwright.dev) | Apache-2.0 | End-to-end tests + screenshot/promo generation |
+| [edge-tts](https://github.com/rany2/edge-tts) | LGPL-3.0 (one MIT file) | Neural voice-over for the promo video |
+| [FFmpeg](https://ffmpeg.org) | GPL-2.0-or-later build (LGPL-2.1+ core; this build is GPL-enabled) | Promo video/GIF/screenshot rendering |
+
+The Markonator icon and visual assets are original work, MIT-licensed with the
+project.
+
+---
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

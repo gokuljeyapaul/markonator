@@ -27,3 +27,6 @@ extension/icons/
 extension/index.html
 extension/sidepanel.html
 extension/*.zip
+
+# Local Python venv for edge-tts (promo voice-over)
+.venv/

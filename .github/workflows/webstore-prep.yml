@@ -70,22 +70,25 @@ jobs:
       - name: Build promo video (1920x1080 MP4 for YouTube)
         run: bash scripts/make-promo-video.sh screenshots promo/markonator-promo.mp4
 
+      - name: Install edge-tts (for the voiced promo)
+        run: python3 -m pip install edge-tts
+
+      - name: Build voiced promo video (neural narration + music)
+        continue-on-error: true
+        env:
+          EDGE_TTS: edge-tts
+        run: bash scripts/make-promo-voiced.sh screenshots promo/markonator-promo-voiced.mp4 promo/marquee.png
+
       - name: Attach all Web Store media to the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "${{ steps.rel.outputs.tag }}" --clobber --repo ${{ github.repository }} \
-            screenshots/markonator.gif \
-            screenshots/markonator-hero.png \
-            store-shots/1-plan-loaded.png \
-            store-shots/2-writing-comment.png \
-            store-shots/3-threaded-replies.png \
-            store-shots/4-theme-and-font.png \
-            store-shots/5-copy-agent-prompt.png \
-            promo/markonator-marquee.jpg \
-            promo/markonator-small.jpg \
-            promo/markonator-promo.mp4 \
-            icons/icon128.png
+          ASSETS="screenshots/markonator.gif screenshots/markonator-hero.png
+            store-shots/1-plan-loaded.png store-shots/2-writing-comment.png store-shots/3-threaded-replies.png store-shots/4-theme-and-font.png store-shots/5-copy-agent-prompt.png
+            promo/markonator-marquee.jpg promo/markonator-small.jpg promo/markonator-promo.mp4
+            icons/icon128.png"
+          [ -f promo/markonator-promo-voiced.mp4 ] && ASSETS="$ASSETS promo/markonator-promo-voiced.mp4"
+          gh release upload "${{ steps.rel.outputs.tag }}" --clobber --repo ${{ github.repository }} $ASSETS
 
       - name: Summarize attached assets
         env:
