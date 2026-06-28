@@ -214,7 +214,7 @@ Suggested store listing:
 
 - **Chrome / Edge** — full support: in-place save (File System Access API), PWA install, offline, and the Chrome extension (side panel).
 - **Firefox / Safari** — rendering, commenting, threads, themes, fonts, and **Download** all work. In-place **Save** falls back to a download (no File System Access API). Service-worker offline works over HTTPS/localhost.
-- **Offline** — the Markdown renderer is bundled, so the web app renders fully offline after first load. The four web-font options (Inter, Lora, JetBrains Mono, Atkinson Hyperlegible) need a first online load to cache; system fonts always work offline.
+- **Offline** — the Markdown renderer **and all content fonts** are bundled locally (no CDN, no Google Fonts fetch), so the web app and the Chrome extension work fully offline after first load. Zero network requests.
 
 ---
 

@@ -26,15 +26,11 @@ You can erase all browser state at any time with the **Reset** button.
 
 ## Network access
 
-Marginalia works fully offline. The only optional network access is:
-
-- **Web fonts** (Google Fonts) — if you choose the Inter, Lora, JetBrains Mono,
-  or Atkinson Hyperlegible content font, the font files are fetched from
-  `fonts.googleapis.com` / `fonts.gstatic.com`. No document content, comment
-  content, or personal information is sent in that request — only a standard
-  font fetch. The system-font options require no network at all.
-
-No other network requests are made.
+**None.** Marginalia makes no network requests at all. The Markdown renderer
+(`marked`), the HTML sanitizer (`DOMPurify`), and all content fonts (Inter,
+Lora, JetBrains Mono, Atkinson Hyperlegible) are bundled locally in
+`vendor/` — so the app is fully offline. Nothing about your documents,
+comments, or usage is ever transmitted anywhere.
 
 ## Permissions (Chrome extension)
 

@@ -47,6 +47,21 @@ Marginalia distributes DOMPurify under the terms of the **Apache License 2.0**
 text is included in `purify.LICENSE`. Full, unminified source is available at
 the upstream repository above.
 
+## Bundled content fonts (Inter, Lora, JetBrains Mono, Atkinson Hyperlegible)
+
+These font families (latin subset, `vendor/fonts/*.woff2`) are licensed under
+the **SIL Open Font License 1.1**. The full OFL text and the per-font copyright
+notices are in `vendor/fonts/OFL.txt`.
+
+- Inter — Copyright 2020 The Inter Project Authors
+- Lora — Copyright 2011 The Lora Project Authors
+- JetBrains Mono — Copyright 2020 JetBrains
+- Atkinson Hyperlegible — Copyright 2020 Braille Institute of America, Inc.
+
+The OFL permits bundling and redistribution alongside software, provided the
+license and copyright notices are retained (they are, in `vendor/fonts/OFL.txt`,
+which is included in the extension package).
+
 ## Notice for distribution
 
 When redistributing Marginalia or a build of it (including the Chrome

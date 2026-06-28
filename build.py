@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 """Assemble the Chrome extension from the shared sources.
 
-The web app (repo root) is the canonical home of the app logic and styles:
-  - src/app.js, src/styles.css          -> shared code
+The web app (repo root) is the canonical home of the app logic, styles, and
+bundled assets:
+  - src/app.js, src/styles.css               -> shared code
   - vendor/marked.min.js, vendor/purify.min.js -> bundled renderer libs
-  - icons/icon{16,32,48,128}.png        -> generated from icon.svg
+  - vendor/fonts/*.woff2 + fonts.css + OFL.txt -> bundled content fonts
+  - icons/icon{16,32,48,128}.png              -> generated from icon.svg
 
 This script copies only the runtime files into extension/, generates the
 extension pages (extension/index.html full-tab + extension/sidepanel.html side
 panel) from the web shell, and zips EXACTLY the files the Chrome Web Store
 needs — no tests, no README, no source maps, no extra icon sizes, no stray
-files. manifest.json sits at the root of the zip.
+files. manifest.json sits at the root of the zip. The extension has zero
+remote resources (fonts are bundled, not fetched).
 
 Usage:
     python3 build.py            # assemble extension/ and extension/*.zip
@@ -35,8 +38,9 @@ EXT = os.path.join(ROOT, "extension")
 VENDOR_FILES = ["marked.min.js", "purify.min.js", "marked.LICENSE.md", "purify.LICENSE"]
 ICON_SIZES = [16, 32, 48, 128]  # only the sizes the MV3 manifest references
 
-# The exact, complete set of files that go into the Web Store zip.
-ZIP_FILES = (
+# Runtime files that go into the Web Store zip. Font files (under vendor/fonts/)
+# are added in main() by listing that directory at build time.
+_BASE_ZIP = (
     [
         "manifest.json",
         "background.js",
@@ -64,11 +68,6 @@ def build_page():
     page = re.sub(r'\s*<link rel="manifest" href="\./manifest\.json" />', "", page)
     page = re.sub(r'\s*<link rel="apple-touch-icon"[^>]*/>', "", page)
     page = page.replace('href="./icon.svg"', 'href="icons/icon32.png"')
-    # Strip remote Google Fonts so the extension is fully self-contained and
-    # offline (zero remote resources). The system/serif/mono/rounded font
-    # options work fully; the Inter/Lora/etc. options fall back to system.
-    page = re.sub(r"\s*<link[^>]*fonts\.googleapis\.com[^>]*>", "", page)
-    page = re.sub(r"\s*<link[^>]*fonts\.gstatic\.com[^>]*>", "", page)
     # mark extension mode so app.js skips SW registration + install prompt
     page = page.replace(
         '<meta name="theme-color" content="#0d1117" />',
@@ -85,6 +84,11 @@ def main():
     # 2) runtime vendor libs + their license texts only
     for f in VENDOR_FILES:
         copy_file(os.path.join(ROOT, "vendor", f), os.path.join(EXT, "vendor", f))
+    # 2b) bundled fonts (local woff2 + fonts.css + OFL license) so every font
+    #     option works fully offline, with zero remote resources.
+    fonts_src = os.path.join(ROOT, "vendor", "fonts")
+    for f in os.listdir(fonts_src):
+        copy_file(os.path.join(fonts_src, f), os.path.join(EXT, "vendor", "fonts", f))
     # 3) only the icon sizes referenced by the manifest
     for s in ICON_SIZES:
         copy_file(
@@ -101,8 +105,13 @@ def main():
     zip_path = os.path.join(EXT, "marginalia-extension.zip")
     if os.path.exists(zip_path):
         os.remove(zip_path)
+    fonts = [
+        f"vendor/fonts/{f}"
+        for f in sorted(os.listdir(os.path.join(EXT, "vendor", "fonts")))
+    ]
+    zip_files = list(_BASE_ZIP) + fonts
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
-        for rel in ZIP_FILES:
+        for rel in zip_files:
             full = os.path.join(EXT, rel)
             if not os.path.exists(full):
                 raise SystemExit(f"build: missing required file: {rel}")

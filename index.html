@@ -11,9 +11,7 @@
         <link rel="manifest" href="./manifest.json" />
         <link rel="icon" href="./icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="./icon.svg" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Lora:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="vendor/fonts/fonts.css" />
         <link rel="stylesheet" href="src/styles.css" />
     </head>
     <body>
@@ -46,17 +44,72 @@
                     <div id="themePopover" class="theme-popover"></div>
                 </div>
                 <div class="font-picker">
-                    <button id="fontBtn" class="icon-btn" title="Content font">Aa</button>
+                    <button id="fontBtn" class="icon-btn" title="Content font">
+                        Aa
+                    </button>
                     <div id="fontPopover" class="font-popover"></div>
                 </div>
-                <button id="autoSaveBtn" class="icon-btn toggle-icon" title="Auto-save: off" aria-pressed="false">🔁</button>
-                <button id="openBtn" class="icon-btn" title="Open or switch .md file">📂</button>
-                <button id="saveBtn" class="icon-btn primary" title="Save comments back to file" disabled>💾</button>
-                <button id="saveCopyBtn" class="icon-btn primary" title="Save, then copy the agent prompt" disabled>📋</button>
-                <button id="downloadBtn" class="icon-btn" title="Download .md with comments">⬇️</button>
-                <button id="agentPromptBtn" class="icon-btn" title="Copy agent-ready prompt" disabled>🤖</button>
-                <button id="installBtn" class="icon-btn" hidden title="Install as an app">⧉</button>
-                <button id="resetBtn" class="icon-btn danger" title="Clear all browser state">🗑️</button>
+                <button
+                    id="autoSaveBtn"
+                    class="icon-btn toggle-icon"
+                    title="Auto-save: off"
+                    aria-pressed="false"
+                >
+                    🔁
+                </button>
+                <button
+                    id="openBtn"
+                    class="icon-btn"
+                    title="Open or switch .md file"
+                >
+                    📂
+                </button>
+                <button
+                    id="saveBtn"
+                    class="icon-btn primary"
+                    title="Save comments back to file"
+                    disabled
+                >
+                    💾
+                </button>
+                <button
+                    id="saveCopyBtn"
+                    class="icon-btn primary"
+                    title="Save, then copy the agent prompt"
+                    disabled
+                >
+                    📋
+                </button>
+                <button
+                    id="downloadBtn"
+                    class="icon-btn"
+                    title="Download .md with comments"
+                >
+                    ⬇️
+                </button>
+                <button
+                    id="agentPromptBtn"
+                    class="icon-btn"
+                    title="Copy agent-ready prompt"
+                    disabled
+                >
+                    🤖
+                </button>
+                <button
+                    id="installBtn"
+                    class="icon-btn"
+                    hidden
+                    title="Install as an app"
+                >
+                    ⧉
+                </button>
+                <button
+                    id="resetBtn"
+                    class="icon-btn danger"
+                    title="Clear all browser state"
+                >
+                    🗑️
+                </button>
             </div>
         </header>
 
