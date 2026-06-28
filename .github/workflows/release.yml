@@ -28,6 +28,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   release:
@@ -125,3 +126,11 @@ jobs:
           generated and attached by the \`webstore-prep\` workflow shortly after
           this release is published. See \`webstore/STORE_LISTING.md\`." \
             --generate-notes
+
+      - name: Dispatch Web Store media prep + release verification
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run webstore-prep.yml --repo ${{ github.repository }} --ref main -f tag=${{ steps.ver.outputs.tag }}
+          gh workflow run release-verify.yml --repo ${{ github.repository }} --ref main -f tag=${{ steps.ver.outputs.tag }}
+          echo "dispatched webstore-prep and release-verify for ${{ steps.ver.outputs.tag }}"
