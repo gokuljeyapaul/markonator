@@ -6,6 +6,11 @@
                 document.querySelector('meta[name="marginalia-mode"]') &&
                 document.querySelector('meta[name="marginalia-mode"]').content ===
                     "extension";
+            // ?test=1 opts into the test hook and skips SW registration so
+            // automated tests get a clean, cache-free page.
+            const isTest =
+                typeof URLSearchParams !== "undefined" &&
+                new URLSearchParams(location.search).get("test") === "1";
 
             /* ---------- Review markup spec (versioned for forward-compat) ----------
                Inline anchor (wraps selected text on a content line):
@@ -1235,6 +1240,9 @@
                     return;
                 }
                 const el = document.elementFromPoint(e.clientX, e.clientY);
+                // If the cursor is over the add button itself, keep it shown so the
+                // user (or test driver) can click it without it vanishing.
+                if (el && (el === floatingAdd || floatingAdd.contains(el))) return;
                 const block = el ? el.closest(".block") : null;
                 const docEl = document.getElementById("doc");
                 if (!block || !docEl.contains(block)) {
@@ -1841,7 +1849,7 @@
                 deferredInstall = null;
             });
 
-            if (!isExtension && "serviceWorker" in navigator) {
+            if (!isExtension && !isTest && "serviceWorker" in navigator) {
                 window.addEventListener("load", () => {
                     navigator.serviceWorker
                         .register("./service-worker.js")
@@ -1893,14 +1901,20 @@ if (
     typeof window !== "undefined" &&
     new URLSearchParams(location.search).get("test") === "1"
 ) {
-    window.__marginalia = {
-        state,
-        parseMarkdown,
-        serializeDoc,
-        fileLineRanges,
-        buildAgentPrompt,
-        flexFind,
-        loadText,
-        renderDoc,
-    };
+    // Sentinel: proves the hook's condition ran at all.
+    window.__marg_test = true;
+    try {
+        window.__marginalia = {
+            state: state,
+            parseMarkdown: parseMarkdown,
+            serializeDoc: serializeDoc,
+            fileLineRanges: fileLineRanges,
+            buildAgentPrompt: buildAgentPrompt,
+            flexFind: flexFind,
+            loadText: loadText,
+            renderDoc: renderDoc,
+        };
+    } catch (e) {
+        window.__marginalia_err = String((e && (e.stack || e.message)) || e);
+    }
 }
