@@ -1,12 +1,10 @@
-# Marginalia
+# <img src="icon.svg" width="28" height="28" alt="Marginalia"> Marginalia
 
 **Review Markdown plans & skills. Leave comments that persist back into the file — in a format any coding agent can read and act on.**
 
 Marginalia turns a coding-agent plan or skill `​.md` into a reviewable document. You read it like a rendered page, highlight a line or select a few words, and write Markdown comments that thread into replies. When you save, the comments are embedded **inline in the same `.md` file** as invisible-but-machine-parseable `<!-- marginalia: … -->` blocks — right next to the line they refer to. Then you click one button and copy a ready-to-paste prompt that tells your coding agent exactly where the comments are and what to do with them.
 
 > *marginalia (n.): notes written in the margins of a document.* That's the whole idea.
-
-![Marginalia](docs/marginalia-hero.png)
 
 ![Demo](https://github.com/gokuljeyapaul/marginalia/releases/latest/download/marginalia.gif)
 
@@ -89,7 +87,7 @@ flowchart LR
 
 ## How comments are stored (agent-readable)
 
-Comments are embedded as **HTML comments** — invisible to normal Markdown renderers, plain text to any tool that reads files. Threads sit **immediately after the line they refer to**, so reading top-to-bottom preserves context.
+When you **Save** (in place) or **Download**, the comments are written back into the `.md` in this format. They are embedded as **HTML comments** — invisible to normal Markdown renderers, but plain text to any tool or coding agent that reads the file. Threads sit **immediately after the line they refer to**, so reading top-to-bottom preserves context. No separate database, no sidecar file — the review state lives inside the document itself.
 
 ### Line / block comment
 

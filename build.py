@@ -2,14 +2,15 @@
 """Assemble the Chrome extension from the shared sources.
 
 The web app (repo root) is the canonical home of the app logic and styles:
-  - src/app.js, src/styles.css   -> shared code
+  - src/app.js, src/styles.css          -> shared code
   - vendor/marked.min.js, vendor/purify.min.js -> bundled renderer libs
-  - icons/icon{16,32,48,128}.png -> generated from icon.svg
+  - icons/icon{16,32,48,128}.png        -> generated from icon.svg
 
-This script copies those into extension/ and generates extension/index.html
-(the full-tab page) and extension/sidepanel.html (the side-panel page) from
-the web shell, adjusting asset paths and marking extension mode so app.js
-skips PWA-only features (service worker + install prompt).
+This script copies only the runtime files into extension/, generates the
+extension pages (extension/index.html full-tab + extension/sidepanel.html side
+panel) from the web shell, and zips EXACTLY the files the Chrome Web Store
+needs — no tests, no README, no source maps, no extra icon sizes, no stray
+files. manifest.json sits at the root of the zip.
 
 Usage:
     python3 build.py            # assemble extension/ and extension/*.zip
@@ -27,58 +28,92 @@ import zipfile
 ROOT = os.path.dirname(os.path.abspath(__file__))
 EXT = os.path.join(ROOT, "extension")
 
+# Runtime vendor files. The license texts are included because redistribution
+# requires it (MIT for marked; Apache-2.0 — one of DOMPurify's two licenses —
+# requires retaining the license). THIRD_PARTY_LICENSES.md is a repo-level
+# notice and is intentionally NOT shipped inside the extension package.
+VENDOR_FILES = ["marked.min.js", "purify.min.js", "marked.LICENSE.md", "purify.LICENSE"]
+ICON_SIZES = [16, 32, 48, 128]  # only the sizes the MV3 manifest references
+
+# The exact, complete set of files that go into the Web Store zip.
+ZIP_FILES = (
+    [
+        "manifest.json",
+        "background.js",
+        "index.html",
+        "sidepanel.html",
+        "app.js",
+        "styles.css",
+    ]
+    + [f"icons/icon{s}.png" for s in ICON_SIZES]
+    + [f"vendor/{f}" for f in VENDOR_FILES]
+)
+
 
 def copy_file(src, dst):
     os.makedirs(os.path.dirname(dst), exist_ok=True)
     shutil.copy2(src, dst)
 
 
-def main():
-    # 1) shared code, vendor libs, and icons into extension/
-    copy_file(os.path.join(ROOT, "src", "app.js"), os.path.join(EXT, "app.js"))
-    copy_file(
-        os.path.join(ROOT, "src", "styles.css"), os.path.join(EXT, "styles.css")
-    )
-    for f in os.listdir(os.path.join(ROOT, "vendor")):
-        copy_file(
-            os.path.join(ROOT, "vendor", f), os.path.join(EXT, "vendor", f)
-        )
-    for f in os.listdir(os.path.join(ROOT, "icons")):
-        copy_file(os.path.join(ROOT, "icons", f), os.path.join(EXT, "icons", f))
-
-    # 2) generate extension pages from the web shell
+def build_page():
     web = open(os.path.join(ROOT, "index.html")).read()
     page = web
     page = page.replace('href="src/styles.css"', 'href="styles.css"')
     page = page.replace('src="src/app.js"', 'src="app.js"')
-    # drop PWA-only links (extension has its own MV3 manifest; no apple touch icon)
+    # drop PWA-only links (the extension has its own MV3 manifest; no apple-touch-icon)
     page = re.sub(r'\s*<link rel="manifest" href="\./manifest\.json" />', "", page)
     page = re.sub(r'\s*<link rel="apple-touch-icon"[^>]*/>', "", page)
     page = page.replace('href="./icon.svg"', 'href="icons/icon32.png"')
+    # Strip remote Google Fonts so the extension is fully self-contained and
+    # offline (zero remote resources). The system/serif/mono/rounded font
+    # options work fully; the Inter/Lora/etc. options fall back to system.
+    page = re.sub(r"\s*<link[^>]*fonts\.googleapis\.com[^>]*>", "", page)
+    page = re.sub(r"\s*<link[^>]*fonts\.gstatic\.com[^>]*>", "", page)
     # mark extension mode so app.js skips SW registration + install prompt
     page = page.replace(
         '<meta name="theme-color" content="#0d1117" />',
         '<meta name="theme-color" content="#0d1117" />\n'
         '        <meta name="marginalia-mode" content="extension" />',
     )
+    return page
+
+
+def main():
+    # 1) shared code
+    copy_file(os.path.join(ROOT, "src", "app.js"), os.path.join(EXT, "app.js"))
+    copy_file(os.path.join(ROOT, "src", "styles.css"), os.path.join(EXT, "styles.css"))
+    # 2) runtime vendor libs + their license texts only
+    for f in VENDOR_FILES:
+        copy_file(os.path.join(ROOT, "vendor", f), os.path.join(EXT, "vendor", f))
+    # 3) only the icon sizes referenced by the manifest
+    for s in ICON_SIZES:
+        copy_file(
+            os.path.join(ROOT, "icons", f"icon{s}.png"),
+            os.path.join(EXT, "icons", f"icon{s}.png"),
+        )
+
+    # 4) generate the extension pages
+    page = build_page()
     open(os.path.join(EXT, "index.html"), "w").write(page)
     open(os.path.join(EXT, "sidepanel.html"), "w").write(page)
 
-    # 3) zip the extension for the Chrome Web Store
+    # 5) zip EXACTLY the runtime file set (manifest.json at the zip root)
     zip_path = os.path.join(EXT, "marginalia-extension.zip")
     if os.path.exists(zip_path):
         os.remove(zip_path)
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
-        for dp, _dn, fn in os.walk(EXT):
-            for f in fn:
-                if f.endswith(".zip"):
-                    continue
-                full = os.path.join(dp, f)
-                arc = os.path.relpath(full, EXT)
-                z.write(full, arc)
+        for rel in ZIP_FILES:
+            full = os.path.join(EXT, rel)
+            if not os.path.exists(full):
+                raise SystemExit(f"build: missing required file: {rel}")
+            z.write(full, rel)
 
     print("Extension assembled in:", EXT)
     print("Zip:", zip_path)
+    with zipfile.ZipFile(zip_path) as z:
+        print("Contents (%d files):" % len(z.namelist()))
+        for n in sorted(z.namelist()):
+            print("   ", n)
 
 
 if __name__ == "__main__":
