@@ -43,7 +43,7 @@ SCENES=(
 "shot-08.png|One click copies a prompt that tells your agent exactly what to fix, and where."
 )
 INTRO_TEXT="Markonator."
-OUTRO_TEXT="Markonator. Markdown, annotated. Find it on GitHub."
+OUTRO_TEXT="Markonator. Markdown, annotator. Find it on Google Chrome Web Store and Github."
 
 scale1920() { # $1 in $2 out
     ffmpeg -y -hide_banner -loglevel error -i "$1" \
