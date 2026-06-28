@@ -1,5 +1,4 @@
             "use strict";
-            window.__marg_loaded = (window.__marg_loaded || 0) + 1;
             // When loaded inside the Chrome extension, the page sets
             // <meta name="marginalia-mode" content="extension">. We use that to
             // skip PWA-only features (service worker + install prompt).
@@ -1733,7 +1732,6 @@
             const themeBtn = document.getElementById("themeBtn");
             const themePopover = document.getElementById("themePopover");
             const themeSwatch = document.getElementById("themeSwatch");
-            const themeLabel = document.getElementById("themeLabel");
 
             function buildThemePopover() {
                 themePopover.innerHTML = "";
@@ -1780,9 +1778,6 @@
                 try {
                     localStorage.setItem("mdr-theme", id);
                 } catch (e) {}
-                themeLabel.textContent = (
-                    THEMES.find((t) => t.id === id) || THEMES[0]
-                ).label;
                 themeSwatch.className =
                     "theme-swatch" + (id === "auto" ? " auto" : "");
                 themePopover.querySelectorAll(".theme-opt").forEach((o) => {
@@ -1902,8 +1897,6 @@ if (
     typeof window !== "undefined" &&
     new URLSearchParams(location.search).get("test") === "1"
 ) {
-    // Sentinel: proves the hook's condition ran at all.
-    window.__marg_test = true;
     try {
         window.__marginalia = {
             state: state,

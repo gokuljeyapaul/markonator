@@ -25,23 +25,18 @@ agreed
 test.describe("core logic", () => {
   test.beforeEach(async ({ page }) => {
     const errors = [];
-    page.on("pageerror", (e) => errors.push("PAGEERROR: " + e.message));
+    page.on("pageerror", (e) => errors.push("PAGEERROR: " + (e.stack || e.message)));
     page.on("console", (m) => {
       if (m.type() === "error") errors.push("CONSOLE: " + m.text());
     });
     await page.goto("/index.html?test=1", { waitUntil: "load" });
-    await page.waitForTimeout(300);
-    const diag = await page.evaluate(() => ({
-      search: location.search,
-      href: location.href,
-      marg_loaded: window.__marg_loaded,
-      marg_test: window.__marg_test,
-      marg_err: window.__marginalia_err,
-      marginalia_type: typeof window.__marginalia,
-      readyState: document.readyState,
-      hasApp: !!document.getElementById("openBtn"),
-    }));
-    console.log("DIAG", JSON.stringify(diag), "ERRS", JSON.stringify(errors));
+    await page
+      .waitForFunction(() => !!window.__marginalia, null, { timeout: 8000 })
+      .catch(() => {});
+    const err = await page.evaluate(() => window.__marginalia_err);
+    if (err) throw new Error("test hook threw: " + err);
+    const m = await page.evaluate(() => window.__marginalia);
+    if (!m) throw new Error("test hook did not expose __marginalia. Page errors: " + JSON.stringify(errors));
   });
 
   test("parse -> serialize round-trips stably", async ({ page }) => {
@@ -161,7 +156,7 @@ test.describe("core logic", () => {
 /* ---------------- UI / end-to-end tests ---------------- */
 test.describe("UI", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/index.html");
+    await page.goto("/index.html?test=1", { waitUntil: "load" });
     // load the plan via the paste area (no file picker needed)
     await page.locator("#pasteArea").fill(PLAN);
     await page.locator("#loadPasteBtn").click();
