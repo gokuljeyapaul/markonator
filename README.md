@@ -6,7 +6,12 @@ Marginalia turns a coding-agent plan or skill `​.md` into a reviewable documen
 
 > *marginalia (n.): notes written in the margins of a document.* That's the whole idea.
 
-![Marginalia](icon.svg)
+![Marginalia](docs/marginalia-hero.png)
+
+![Demo](https://github.com/gokuljeyapaul/marginalia/releases/latest/download/marginalia.gif)
+
+*Open a plan, comment on a line or selection, save back to the file, and copy a
+ready-to-paste prompt that tells your coding agent exactly what to fix.*
 
 ---
 

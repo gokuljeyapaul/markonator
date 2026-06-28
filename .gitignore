@@ -10,6 +10,10 @@ package-lock.json
 test-results/
 playwright-report/
 
+# Generated screenshots (built by tests/screenshots.spec.js + scripts/make-gif.sh).
+# The canonical hero PNG + demo GIF live in docs/ and on GitHub releases.
+screenshots/
+
 # Generated extension build artifacts (run `python3 build.py` to regenerate).
 # The extension's own source (manifest.json, background.js) IS committed;
 # these are derived from the shared src/ + vendor/ + icons/ at the repo root.

@@ -30,7 +30,18 @@ module.exports = defineConfig({
     projects: [
         {
             name: "chromium",
+            testMatch: /e2e\.spec\.js/,
             use: { ...devices["Desktop Chrome"] },
+        },
+        {
+            name: "screenshots",
+            testMatch: /screenshots\.spec\.js/,
+            retries: 0,
+            use: {
+                ...devices["Desktop Chrome"],
+                viewport: { width: 1280, height: 800 },
+                deviceScaleFactor: 2,
+            },
         },
     ],
 });

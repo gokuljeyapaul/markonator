@@ -36,7 +36,26 @@ jobs:
         run: python3 build.py
 
       - name: Run tests
-        run: npx playwright test
+        run: npx playwright test --project=chromium
+
+      - name: Capture screenshots
+        if: always()
+        continue-on-error: true
+        run: npx playwright test --project=screenshots --reporter=list
+
+      - name: Build demo GIF
+        if: always()
+        continue-on-error: true
+        run: bash scripts/make-gif.sh screenshots screenshots/marginalia.gif
+
+      - name: Upload screenshots + GIF
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: screenshots/
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Upload report on failure
         if: failure()

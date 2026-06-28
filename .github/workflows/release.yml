@@ -41,6 +41,16 @@ jobs:
         with:
           python-version: "3.x"
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Playwright deps
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+
       - name: Compute next version
         id: ver
         run: |
@@ -95,6 +105,14 @@ jobs:
       - name: Build the extension + zip
         run: python3 build.py
 
+      - name: Capture screenshots
+        continue-on-error: true
+        run: npx playwright test --project=screenshots --reporter=list
+
+      - name: Build demo GIF
+        continue-on-error: true
+        run: bash scripts/make-gif.sh screenshots screenshots/marginalia.gif
+
       - name: Commit bump, tag, push
         run: |
           git config user.name "github-actions[bot]"
@@ -105,12 +123,15 @@ jobs:
           git push
           git push --tags
 
-      - name: Publish GitHub release with the extension zip
+      - name: Publish GitHub release with the extension zip + demo GIF
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          ASSETS="extension/marginalia-extension.zip"
+          if [ -f screenshots/marginalia.gif ]; then ASSETS="$ASSETS screenshots/marginalia.gif"; fi
+          if [ -f screenshots/marginalia-hero.png ]; then ASSETS="$ASSETS screenshots/marginalia-hero.png"; fi
           gh release create ${{ steps.ver.outputs.tag }} \
-            extension/marginalia-extension.zip \
+            $ASSETS \
             --title "${{ steps.ver.outputs.tag }}" \
             --notes "Auto-built release.
 
