@@ -1,6 +1,6 @@
 # Third-party licenses
 
-Marginalia bundles the following third-party libraries in this `vendor/`
+Markonator bundles the following third-party libraries in this `vendor/`
 directory. Their license texts are included alongside the minified files and
 are also reproduced below.
 
@@ -42,7 +42,7 @@ SOFTWARE.
 - License file: `purify.LICENSE` (contains the full text of both the Apache
   License 2.0 and the Mozilla Public License 2.0)
 
-Marginalia distributes DOMPurify under the terms of the **Apache License 2.0**
+Markonator distributes DOMPurify under the terms of the **Apache License 2.0**
 (one of the two licenses offered by the project). The full Apache 2.0 license
 text is included in `purify.LICENSE`. Full, unminified source is available at
 the upstream repository above.
@@ -64,7 +64,7 @@ which is included in the extension package).
 
 ## Notice for distribution
 
-When redistributing Marginalia or a build of it (including the Chrome
+When redistributing Markonator or a build of it (including the Chrome
 extension), retain these license files in the `vendor/` directory alongside the
 minified libraries. No modifications have been made to either library beyond
 minification as shipped by the upstream projects.

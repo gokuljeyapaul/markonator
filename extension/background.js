@@ -1,4 +1,4 @@
-// Marginalia extension background service worker.
+// Markonator extension background service worker.
 
 // Clicking the toolbar action opens the side panel.
 chrome.runtime.onInstalled.addListener(() => {
@@ -9,7 +9,7 @@ chrome.runtime.onInstalled.addListener(() => {
     }
 });
 
-// Keyboard shortcut: open Marginalia in a full browser tab.
+// Keyboard shortcut: open Markonator in a full browser tab.
 chrome.commands.onCommand.addListener((cmd) => {
     if (cmd === "open-full-tab") {
         chrome.tabs.create({ url: chrome.runtime.getURL("index.html") });

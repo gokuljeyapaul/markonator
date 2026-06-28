@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "Marginalia",
+    "name": "Markonator",
     "version": "0.1.5",
     "description": "Review Markdown plans and skills. Leave inline comments that persist back into the file in a format any coding agent can read.",
     "icons": {
@@ -10,7 +10,7 @@
         "128": "icons/icon128.png"
     },
     "action": {
-        "default_title": "Open Marginalia",
+        "default_title": "Open Markonator",
         "default_icon": {
             "16": "icons/icon16.png",
             "32": "icons/icon32.png",
@@ -32,7 +32,7 @@
             "suggested_key": {
                 "default": "Alt+Shift+M"
             },
-            "description": "Open Marginalia in a full browser tab"
+            "description": "Open Markonator in a full browser tab"
         }
     }
 }

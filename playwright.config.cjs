@@ -2,7 +2,7 @@
 const { defineConfig, devices } = require("@playwright/test");
 
 /**
- * Playwright E2E config for Marginalia.
+ * Playwright E2E config for Markonator.
  * Serves the repo root over HTTP (so the service worker + module scripts load
  * in a secure context) and runs Chromium.
  */

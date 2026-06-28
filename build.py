@@ -20,7 +20,7 @@ Usage:
 
 Then either:
     - Load `extension/` unpacked: chrome://extensions -> Developer mode -> Load unpacked
-    - Publish: upload extension/marginalia-extension.zip to the Chrome Web Store
+    - Publish: upload extension/markonator-extension.zip to the Chrome Web Store
 """
 
 import os
@@ -72,7 +72,7 @@ def build_page():
     page = page.replace(
         '<meta name="theme-color" content="#0d1117" />',
         '<meta name="theme-color" content="#0d1117" />\n'
-        '        <meta name="marginalia-mode" content="extension" />',
+        '        <meta name="markonator-mode" content="extension" />',
     )
     return page
 
@@ -102,7 +102,7 @@ def main():
     open(os.path.join(EXT, "sidepanel.html"), "w").write(page)
 
     # 5) zip EXACTLY the runtime file set (manifest.json at the zip root)
-    zip_path = os.path.join(EXT, "marginalia-extension.zip")
+    zip_path = os.path.join(EXT, "markonator-extension.zip")
     if os.path.exists(zip_path):
         os.remove(zip_path)
     fonts = [

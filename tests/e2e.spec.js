@@ -6,20 +6,20 @@ const PLAN = fs.readFileSync(path.join(__dirname, "fixtures/plan.md"), "utf8");
 
 const COMPLICATED = `# Plan
 Some line.
-<!-- marginalia:thread id="t1" line="2" snippet="Some line." ts="x" resolved="true" -->
-<!-- marginalia:c id="c1" replyTo="" ts="x" -->
+<!-- markonator:thread id="t1" line="2" snippet="Some line." ts="x" resolved="true" -->
+<!-- markonator:c id="c1" replyTo="" ts="x" -->
 all done here
-<!-- /marginalia:c -->
-<!-- /marginalia:thread -->
+<!-- /markonator:c -->
+<!-- /markonator:thread -->
 Another line.
-<!-- marginalia:thread id="t2" line="6" snippet="Another line." ts="y" -->
-<!-- marginalia:c id="c2" replyTo="" ts="y" -->
+<!-- markonator:thread id="t2" line="6" snippet="Another line." ts="y" -->
+<!-- markonator:c id="c2" replyTo="" ts="y" -->
 please fix this
-<!-- /marginalia:c -->
-<!-- marginalia:c id="c3" replyTo="c2" ts="y" -->
+<!-- /markonator:c -->
+<!-- markonator:c id="c3" replyTo="c2" ts="y" -->
 agreed
-<!-- /marginalia:c -->
-<!-- /marginalia:thread -->`;
+<!-- /markonator:c -->
+<!-- /markonator:thread -->`;
 
 /* ---------------- Logic tests (via the ?test=1 hook) ---------------- */
 test.describe("core logic", () => {
@@ -31,30 +31,30 @@ test.describe("core logic", () => {
     });
     await page.goto("/index.html?test=1", { waitUntil: "load" });
     await page
-      .waitForFunction(() => !!window.__marginalia, null, { timeout: 8000 })
+      .waitForFunction(() => !!window.__markonator, null, { timeout: 8000 })
       .catch(() => {});
-    const err = await page.evaluate(() => window.__marginalia_err);
+    const err = await page.evaluate(() => window.__markonator_err);
     if (err) throw new Error("test hook threw: " + err);
-    const m = await page.evaluate(() => window.__marginalia);
-    if (!m) throw new Error("test hook did not expose __marginalia. Page errors: " + JSON.stringify(errors));
+    const m = await page.evaluate(() => window.__markonator);
+    if (!m) throw new Error("test hook did not expose __markonator. Page errors: " + JSON.stringify(errors));
   });
 
   test("parse -> serialize round-trips stably", async ({ page }) => {
     const r = await page.evaluate((src) => {
-      const m = window.__marginalia;
+      const m = window.__markonator;
       const doc = m.parseMarkdown(src);
       const out = m.serializeDoc(doc);
       const out2 = m.serializeDoc(m.parseMarkdown(out));
       return { equal: out === out2, out };
     }, COMPLICATED);
     expect(r.equal).toBeTruthy();
-    expect(r.out).toContain('marginalia:thread id="t1"');
+    expect(r.out).toContain('markonator:thread id="t1"');
     expect(r.out).toContain('resolved="true"');
   });
 
   test("resolved flag parses and serializes", async ({ page }) => {
     const r = await page.evaluate((src) => {
-      const m = window.__marginalia;
+      const m = window.__markonator;
       const doc = m.parseMarkdown(src);
       const threads = doc
         .filter((d) => d.kind === "thread")
@@ -70,16 +70,16 @@ test.describe("core logic", () => {
 
   test("fileLineRanges aligns with the serialized file", async ({ page }) => {
     const r = await page.evaluate((src) => {
-      const m = window.__marginalia;
+      const m = window.__markonator;
       const doc = m.parseMarkdown(src);
       const ranges = m.fileLineRanges(doc);
       const lines = m.serializeDoc(doc).split("\n");
       let ok = true;
       for (const rng of ranges) {
         if (rng.kind === "thread") {
-          if (!lines[rng.start - 1].startsWith("<!-- marginalia:thread"))
+          if (!lines[rng.start - 1].startsWith("<!-- markonator:thread"))
             ok = false;
-          if (lines[rng.end - 1] !== "<!-- /marginalia:thread -->") ok = false;
+          if (lines[rng.end - 1] !== "<!-- /markonator:thread -->") ok = false;
         }
       }
       return {
@@ -96,7 +96,7 @@ test.describe("core logic", () => {
     page,
   }) => {
     const r = await page.evaluate((src) => {
-      const m = window.__marginalia;
+      const m = window.__markonator;
       m.state.doc = m.parseMarkdown(src);
       m.state.planPath = "/repos/foo/plan.md";
       m.state.fileHandle = {}; // truthy => in-place capable
@@ -112,7 +112,7 @@ test.describe("core logic", () => {
     page,
   }) => {
     const r = await page.evaluate((src) => {
-      const m = window.__marginalia;
+      const m = window.__markonator;
       m.state.doc = m.parseMarkdown(src);
       m.state.planPath = "plan.md";
       m.state.fileHandle = null;
@@ -120,14 +120,14 @@ test.describe("core logic", () => {
       return m.buildAgentPrompt();
     }, COMPLICATED);
     expect(r).toContain("## Full document with comments");
-    expect(r).toContain("marginalia:thread");
+    expect(r).toContain("markonator:thread");
   });
 
   test("agent prompt lists only unresolved threads and notes resolved ones", async ({
     page,
   }) => {
     const r = await page.evaluate((src) => {
-      const m = window.__marginalia;
+      const m = window.__markonator;
       m.state.doc = m.parseMarkdown(src);
       m.state.planPath = "plan.md";
       m.state.fileHandle = {};
@@ -145,7 +145,7 @@ test.describe("core logic", () => {
 
   test("flexFind locates whitespace-flexible substrings", async ({ page }) => {
     const r = await page.evaluate(() => {
-      const m = window.__marginalia;
+      const m = window.__markonator;
       return m.flexFind("hello   world  foo", "world foo");
     });
     expect(r).toBeTruthy();
@@ -195,7 +195,7 @@ test.describe("UI", () => {
     await expect(page.locator(".thread.resolved")).toHaveCount(0);
   });
 
-  test("download contains the marginalia markup and round-trips", async ({
+  test("download contains the markonator markup and round-trips", async ({
     page,
   }) => {
     // add a comment first
@@ -210,16 +210,16 @@ test.describe("UI", () => {
       page.waitForEvent("download"),
       page.locator("#downloadBtn").click(),
     ]);
-    const out = "/tmp/marginalia-download.md";
+    const out = "/tmp/markonator-download.md";
     await download.saveAs(out);
     const content = fs.readFileSync(out, "utf8");
-    expect(content).toContain("marginalia:thread");
+    expect(content).toContain("markonator:thread");
     expect(content).toContain("Split this step into two.");
     expect(content).toContain("Demo Plan");
 
     // and it re-parses cleanly
     const r = await page.evaluate((src) => {
-      const m = window.__marginalia;
+      const m = window.__markonator;
       const doc = m.parseMarkdown(src);
       return {
         stable:
@@ -243,7 +243,7 @@ test.describe("UI", () => {
 
     await page.locator("#agentPromptBtn").click();
     const clip = await page.evaluate(() => navigator.clipboard.readText());
-    expect(clip).toContain("marginalia:");
+    expect(clip).toContain("markonator:");
     expect(clip).toContain("Review threads to address");
     expect(clip).toContain("Use a typed enum.");
   });

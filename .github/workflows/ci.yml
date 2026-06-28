@@ -50,7 +50,7 @@ jobs:
       - name: Build demo GIF
         if: always()
         continue-on-error: true
-        run: bash scripts/make-gif.sh screenshots screenshots/marginalia.gif
+        run: bash scripts/make-gif.sh screenshots screenshots/markonator.gif
 
       - name: Upload screenshots + GIF
         if: always()

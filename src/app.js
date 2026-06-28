@@ -1,10 +1,10 @@
             "use strict";
             // When loaded inside the Chrome extension, the page sets
-            // <meta name="marginalia-mode" content="extension">. We use that to
+            // <meta name="markonator-mode" content="extension">. We use that to
             // skip PWA-only features (service worker + install prompt).
             const isExtension =
-                document.querySelector('meta[name="marginalia-mode"]') &&
-                document.querySelector('meta[name="marginalia-mode"]').content ===
+                document.querySelector('meta[name="markonator-mode"]') &&
+                document.querySelector('meta[name="markonator-mode"]').content ===
                     "extension";
             // ?test=1 opts into the test hook and skips SW registration so
             // automated tests get a clean, cache-free page.
@@ -14,29 +14,29 @@
 
             /* ---------- Review markup spec (versioned for forward-compat) ----------
                Inline anchor (wraps selected text on a content line):
-                 text <!-- marginalia:anchor id="a1" -->selected words<!-- /marginalia:anchor --> text
+                 text <!-- markonator:anchor id="a1" -->selected words<!-- /markonator:anchor --> text
                Thread block (on its own lines, right after the line/selection it refers to):
-                 <!-- marginalia:thread id="t1" line="5" anchor="a1" snippet="..." ts="ISO" -->
-                 <!-- marginalia:c id="c1" replyTo="" ts="ISO" -->
+                 <!-- markonator:thread id="t1" line="5" anchor="a1" snippet="..." ts="ISO" -->
+                 <!-- markonator:c id="c1" replyTo="" ts="ISO" -->
                  comment markdown body
-                 <!-- /marginalia:c -->
-                 <!-- marginalia:c id="c2" replyTo="c1" ts="ISO" -->
+                 <!-- /markonator:c -->
+                 <!-- markonator:c id="c2" replyTo="c1" ts="ISO" -->
                  reply body
-                 <!-- /marginalia:c -->
-                 <!-- /marginalia:thread -->
+                 <!-- /markonator:c -->
+                 <!-- /markonator:thread -->
                Line numbers in `line="..."` are 1-indexed and refer to the saved file.
             */
 
             const RE = {
-                meta: /<!--\s*marginalia:meta\s+version="(\d+)"\s*-->/,
+                meta: /<!--\s*markonator:meta\s+version="(\d+)"\s*-->/,
                 threadOpen:
-                    /^<!--\s*marginalia:thread\s+id="([^"]+)"([^>]*)\s*-->\s*$/,
-                threadClose: /^<!--\s*\/marginalia:thread\s*-->\s*$/,
+                    /^<!--\s*markonator:thread\s+id="([^"]+)"([^>]*)\s*-->\s*$/,
+                threadClose: /^<!--\s*\/markonator:thread\s*-->\s*$/,
                 commentOpen:
-                    /^<!--\s*marginalia:c\s+id="([^"]+)"([^>]*)\s*-->\s*$/,
-                commentClose: /^<!--\s*\/marginalia:c\s*-->\s*$/,
-                anchor: /<!--\s*marginalia:anchor\s+id="([^"]+)"\s*-->([\s\S]*?)<!--\s*\/marginalia:anchor\s*-->/g,
-                anchorTag: /<!--\s*marginalia:anchor\s+id="([^"]+)"\s*-->/,
+                    /^<!--\s*markonator:c\s+id="([^"]+)"([^>]*)\s*-->\s*$/,
+                commentClose: /^<!--\s*\/markonator:c\s*-->\s*$/,
+                anchor: /<!--\s*markonator:anchor\s+id="([^"]+)"\s*-->([\s\S]*?)<!--\s*\/markonator:anchor\s*-->/g,
+                anchorTag: /<!--\s*markonator:anchor\s+id="([^"]+)"\s*-->/,
             };
 
             function parseAttrs(s) {
@@ -159,7 +159,7 @@
                         if (t.ts) attrs.push(`ts="${t.ts}"`);
                         if (t.resolved) attrs.push(`resolved="true"`);
                         out.push(
-                            `<!-- marginalia:thread ${attrs.join(" ")} -->`,
+                            `<!-- markonator:thread ${attrs.join(" ")} -->`,
                         );
                         for (const c of t.comments) {
                             const ca = [
@@ -167,11 +167,11 @@
                                 `replyTo="${c.replyTo || ""}"`,
                                 `ts="${c.ts || ""}"`,
                             ];
-                            out.push(`<!-- marginalia:c ${ca.join(" ")} -->`);
+                            out.push(`<!-- markonator:c ${ca.join(" ")} -->`);
                             out.push(c.body);
-                            out.push(`<!-- /marginalia:c -->`);
+                            out.push(`<!-- /markonator:c -->`);
                         }
-                        out.push(`<!-- /marginalia:thread -->`);
+                        out.push(`<!-- /markonator:thread -->`);
                     }
                 }
                 return out.join("\n");
@@ -540,7 +540,7 @@
             }
 
             /* ---------- IndexedDB persistence ---------- */
-            const DB_NAME = "md-reviewer";
+            const DB_NAME = "markonator";
             const STORE = "state";
             function idb() {
                 return new Promise((res, rej) => {
@@ -774,7 +774,7 @@
                     L.push(
                         "The plan file at `" +
                             planPath +
-                            "` has been updated with inline review comments in the `marginalia:` format. They are NOT part of the original plan — they are reviewer feedback. Open that file, address each thread, then strip the comment markup and return the cleaned-up plan.",
+                            "` has been updated with inline review comments in the `markonator:` format. They are NOT part of the original plan — they are reviewer feedback. Open that file, address each thread, then strip the comment markup and return the cleaned-up plan.",
                     );
                     L.push("");
                     L.push(
@@ -784,31 +784,31 @@
                     );
                     L.push("");
                     L.push(
-                        "The `marginalia:` review blocks appear in the file roughly between lines " +
+                        "The `markonator:` review blocks appear in the file roughly between lines " +
                             spanStr +
                             ".",
                     );
                     L.push("");
                 } else {
                     L.push(
-                        "A Markdown plan is being reviewed. The review comments are in the `marginalia:` format and have NOT yet been written back to the source file, so the full document with comments is included below. Address each thread, then remove the comment markup and return the cleaned-up plan.",
+                        "A Markdown plan is being reviewed. The review comments are in the `markonator:` format and have NOT yet been written back to the source file, so the full document with comments is included below. Address each thread, then remove the comment markup and return the cleaned-up plan.",
                     );
                     L.push("");
                 }
 
                 L.push("## Comment format");
                 L.push(
-                    "Review comments are embedded as HTML comments prefixed with `marginalia:`. They are NOT part of the original content — they are reviewer feedback.",
+                    "Review comments are embedded as HTML comments prefixed with `markonator:`. They are NOT part of the original content — they are reviewer feedback.",
                 );
                 L.push("");
                 L.push(
-                    '- `<!-- marginalia:thread id="t1" line="5" anchor="a1" snippet="..." ts="..." -->` opens a thread. `line` = 1-indexed file line; `anchor` = id of an inline anchor wrapping the selected text; `snippet` = the referenced text (use it if line numbers have shifted).',
+                    '- `<!-- markonator:thread id="t1" line="5" anchor="a1" snippet="..." ts="..." -->` opens a thread. `line` = 1-indexed file line; `anchor` = id of an inline anchor wrapping the selected text; `snippet` = the referenced text (use it if line numbers have shifted).',
                 );
                 L.push(
-                    '- Inside a thread, comments are: `<!-- marginalia:c id="c1" replyTo="" ts="..." -->` body `<!-- /marginalia:c -->`. `replyTo` is empty for the thread root, or a parent comment id for replies. Later replies may supersede earlier ones (agreements / corrections).',
+                    '- Inside a thread, comments are: `<!-- markonator:c id="c1" replyTo="" ts="..." -->` body `<!-- /markonator:c -->`. `replyTo` is empty for the thread root, or a parent comment id for replies. Later replies may supersede earlier ones (agreements / corrections).',
                 );
                 L.push(
-                    '- Threads close with `<!-- /marginalia:thread -->`. Inline anchors wrap text: `<!-- marginalia:anchor id="a1" -->text<!-- /marginalia:anchor -->`.',
+                    '- Threads close with `<!-- /markonator:thread -->`. Inline anchors wrap text: `<!-- markonator:anchor id="a1" -->text<!-- /markonator:anchor -->`.',
                 );
                 L.push("");
 
@@ -816,7 +816,7 @@
                 if (savedInPlace) {
                     L.push("1. Open `" + planPath + "`.");
                     L.push(
-                        "2. Locate the `marginalia:` review blocks (around lines " +
+                        "2. Locate the `markonator:` review blocks (around lines " +
                             spanStr +
                             ").",
                     );
@@ -824,7 +824,7 @@
                         "3. For each thread, find the referenced text (via snippet / line / anchor) and revise that part to address the feedback, respecting the reply thread (a later reply may change what's wanted).",
                     );
                     L.push(
-                        "4. After addressing a thread, remove all its `<!-- marginalia:... -->` blocks and any `marginalia:anchor` wrappers it introduced.",
+                        "4. After addressing a thread, remove all its `<!-- markonator:... -->` blocks and any `markonator:anchor` wrappers it introduced.",
                     );
                     L.push(
                         "5. Leave untouched any content that has no comments.",
@@ -838,7 +838,7 @@
                         "2. Revise that part to address the feedback, respecting the reply thread (a later reply may change what's wanted).",
                     );
                     L.push(
-                        "3. After addressing a thread, remove all its `<!-- marginalia:... -->` blocks and any `marginalia:anchor` wrappers.",
+                        "3. After addressing a thread, remove all its `<!-- markonator:... -->` blocks and any `markonator:anchor` wrappers.",
                     );
                     L.push(
                         "4. Leave untouched any content that has no comments.",
@@ -850,7 +850,7 @@
                 L.push("## Review threads to address");
                 if (unresolvedRanges.length === 0) {
                     if (resolvedCount > 0) {
-                        L.push("(all threads are marked resolved — just remove their `marginalia:` blocks)");
+                        L.push("(all threads are marked resolved — just remove their `markonator:` blocks)");
                     } else {
                         L.push("(none — this file has no review comments yet)");
                     }
@@ -880,7 +880,7 @@
                     });
                 }
                 if (resolvedCount > 0 && unresolvedRanges.length > 0) {
-                    L.push("(Additionally, " + resolvedCount + " thread(s) are already marked resolved — remove their `marginalia:` blocks as well.)");
+                    L.push("(Additionally, " + resolvedCount + " thread(s) are already marked resolved — remove their `markonator:` blocks as well.)");
                 }
                 L.push("");
 
@@ -969,7 +969,7 @@
                     input.hidden = true;
                     updateFileTag();
                     try {
-                        localStorage.setItem("mdr-planPath", state.planPath);
+                        localStorage.setItem("markonator-planPath", state.planPath);
                     } catch (e) {}
                 }
                 tag.addEventListener("click", (e) => {
@@ -1097,11 +1097,11 @@
                         const after = li.text.slice(p.end);
                         li.text =
                             before +
-                            '<!-- marginalia:anchor id="' +
+                            '<!-- markonator:anchor id="' +
                             anchorId +
                             '" -->' +
                             inner +
-                            "<!-- /marginalia:anchor -->" +
+                            "<!-- /markonator:anchor -->" +
                             after;
                     }
                     const tid = "t" + state.nextThreadId++;
@@ -1506,13 +1506,13 @@
                 state.autoSave = !!on;
                 autoSaveBtn.setAttribute("aria-pressed", String(state.autoSave));
                 autoSaveBtn.title = "Auto-save: " + (state.autoSave ? "on" : "off");
-                try { localStorage.setItem("mdr-autoSave", state.autoSave ? "1" : "0"); } catch (e) {}
+                try { localStorage.setItem("markonator-autoSave", state.autoSave ? "1" : "0"); } catch (e) {}
             }
             autoSaveBtn.addEventListener("click", () => {
                 setAutoSave(!state.autoSave);
                 if (state.autoSave) maybeAutoSave();
             });
-            try { setAutoSave(localStorage.getItem("mdr-autoSave") === "1"); } catch (e) { setAutoSave(false); }
+            try { setAutoSave(localStorage.getItem("markonator-autoSave") === "1"); } catch (e) { setAutoSave(false); }
 
             /* ---------- Toast ---------- */
             function toast(msg) {
@@ -1606,7 +1606,7 @@
             function applyFont(id) {
                 const f = FONTS.find((x) => x.id === id) || FONTS[0];
                 document.documentElement.style.setProperty("--doc-font", f.stack);
-                try { localStorage.setItem("mdr-font", id); } catch (e) {}
+                try { localStorage.setItem("markonator-font", id); } catch (e) {}
                 fontBtn.style.fontFamily = f.stack;
                 fontPopover.querySelectorAll(".font-opt").forEach((o) =>
                     o.classList.toggle("active", o.dataset.fontId === id));
@@ -1625,7 +1625,7 @@
             buildFontPopover();
             (function initFont() {
                 let id = "system";
-                try { id = localStorage.getItem("mdr-font") || "system"; } catch (e) {}
+                try { id = localStorage.getItem("markonator-font") || "system"; } catch (e) {}
                 applyFont(id);
             })();
             document.querySelectorAll(".mobile-tabs button").forEach((b) => {
@@ -1776,7 +1776,7 @@
                     document.documentElement.setAttribute("data-theme", id);
                 }
                 try {
-                    localStorage.setItem("mdr-theme", id);
+                    localStorage.setItem("markonator-theme", id);
                 } catch (e) {}
                 themeSwatch.className =
                     "theme-swatch" + (id === "auto" ? " auto" : "");
@@ -1815,7 +1815,7 @@
             (function initTheme() {
                 let saved = "auto";
                 try {
-                    saved = localStorage.getItem("mdr-theme") || "auto";
+                    saved = localStorage.getItem("markonator-theme") || "auto";
                 } catch (e) {}
                 buildThemePopover();
                 applyTheme(saved);
@@ -1898,7 +1898,7 @@ if (
     new URLSearchParams(location.search).get("test") === "1"
 ) {
     try {
-        window.__marginalia = {
+        window.__markonator = {
             state: state,
             parseMarkdown: parseMarkdown,
             serializeDoc: serializeDoc,
@@ -1909,6 +1909,6 @@ if (
             renderDoc: renderDoc,
         };
     } catch (e) {
-        window.__marginalia_err = String((e && (e.stack || e.message)) || e);
+        window.__markonator_err = String((e && (e.stack || e.message)) || e);
     }
 }

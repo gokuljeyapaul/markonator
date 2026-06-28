@@ -1,8 +1,8 @@
-// Marginalia service worker — app shell + bundled libs + bundled fonts cached
+// Markonator service worker — app shell + bundled libs + bundled fonts cached
 // for offline use. The app has no remote resources, so this only caches
 // same-origin assets.
 const VERSION = "v1";
-const CACHE = `md-reviewer-${VERSION}`;
+const CACHE = `markonator-${VERSION}`;
 
 // Precache list (all local). The bundled font woff2 files are cached on first
 // use via stale-while-revalidate below.

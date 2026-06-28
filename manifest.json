@@ -1,6 +1,6 @@
 {
-  "name": "Marginalia",
-  "short_name": "Marginalia",
+  "name": "Markonator",
+  "short_name": "Markonator",
   "description": "Review Markdown plans/skills and leave inline, agent-readable comments.",
   "start_url": "./index.html",
   "scope": "./",

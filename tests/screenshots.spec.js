@@ -75,7 +75,7 @@ test("capture demo screenshots", async ({ page }) => {
 
     // hero — full-page final state for the README top image
     await page.screenshot({
-        path: path.join(OUT, "marginalia-hero.png"),
+        path: path.join(OUT, "markonator-hero.png"),
         fullPage: true,
     });
 });

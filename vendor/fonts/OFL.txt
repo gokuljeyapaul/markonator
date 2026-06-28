@@ -1,4 +1,4 @@
-Marginalia bundles the following font families (latin subset). Each is
+Markonator bundles the following font families (latin subset). Each is
 licensed under the SIL Open Font License, Version 1.1, reproduced in full
 below. Source: https://fonts.google.com
 

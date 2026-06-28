@@ -1,5 +1,5 @@
 {
-    "name": "marginalia",
+    "name": "markonator",
     "version": "0.1.0",
     "private": true,
     "description": "Review Markdown plans & skills. Leave inline comments that persist back into the file in a format any coding agent can read.",

@@ -114,7 +114,7 @@ jobs:
 
       - name: Build demo GIF
         continue-on-error: true
-        run: bash scripts/make-gif.sh screenshots screenshots/marginalia.gif
+        run: bash scripts/make-gif.sh screenshots screenshots/markonator.gif
 
       - name: Commit bump, tag, push
         run: |
@@ -130,19 +130,19 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ASSETS="extension/marginalia-extension.zip"
-          if [ -f screenshots/marginalia.gif ]; then ASSETS="$ASSETS screenshots/marginalia.gif"; fi
-          if [ -f screenshots/marginalia-hero.png ]; then ASSETS="$ASSETS screenshots/marginalia-hero.png"; fi
+          ASSETS="extension/markonator-extension.zip"
+          if [ -f screenshots/markonator.gif ]; then ASSETS="$ASSETS screenshots/markonator.gif"; fi
+          if [ -f screenshots/markonator-hero.png ]; then ASSETS="$ASSETS screenshots/markonator-hero.png"; fi
           gh release create ${{ steps.ver.outputs.tag }} \
             $ASSETS \
             --title "${{ steps.ver.outputs.tag }}" \
             --notes "Auto-built release.
 
           **Install the Chrome extension:**
-          1. Download and unzip \`marginalia-extension.zip\` (attached).
+          1. Download and unzip \`markonator-extension.zip\` (attached).
           2. \`chrome://extensions\` → Developer mode → Load unpacked → select the unzipped folder.
 
           **Web app:** \`python3 -m http.server 8000\` in the repo root → open http://localhost:8000/
 
-          See the README for the full review workflow and the \`marginalia:\` comment format." \
+          See the README for the full review workflow and the \`markonator:\` comment format." \
             --generate-notes
