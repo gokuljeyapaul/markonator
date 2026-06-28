@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Markonator",
-    "version": "0.1.5",
+    "version": "0.1.6",
     "description": "Review Markdown plans and skills. Leave inline comments that persist back into the file in a format any coding agent can read.",
     "icons": {
         "16": "icons/icon16.png",
