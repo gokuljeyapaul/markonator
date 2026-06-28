@@ -54,5 +54,15 @@ module.exports = defineConfig({
             retries: 0,
             use: { ...devices["Desktop Chrome"] },
         },
+        {
+            name: "marquee",
+            testMatch: /marquee\.spec\.js/,
+            retries: 0,
+            use: {
+                ...devices["Desktop Chrome"],
+                viewport: { width: 1400, height: 560 },
+                deviceScaleFactor: 1,
+            },
+        },
     ],
 });
