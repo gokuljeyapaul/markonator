@@ -1,0 +1,76 @@
+name: release-verify
+
+# Verifies the Chrome Web Store zip that was actually published in a release:
+# downloads markonator-extension.zip from the release, extracts it, and runs the
+# conformance + unpacked-extension tests against that exact artifact.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to verify (e.g. v0.1.6)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve release tag
+        id: rel
+        run: echo "tag=${{ github.event.inputs.tag || github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright browser (chromium)
+        run: npx playwright install --with-deps chromium
+
+      - name: Download the published release zip
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p /tmp/rel
+          gh release download "${{ steps.rel.outputs.tag }}" \
+            --repo ${{ github.repository }} \
+            --pattern "markonator-extension.zip" \
+            --dir /tmp/rel --clobber
+          ls -la /tmp/rel
+
+      - name: Run release-zip conformance + page tests
+        env:
+          MARKONATOR_ZIP: /tmp/rel/markonator-extension.zip
+        run: npx playwright test --project=zip
+
+      - name: Install xvfb
+        run: sudo apt-get install -y xvfb
+
+      - name: Run unpacked-extension test against the release zip (headed, xvfb)
+        env:
+          MARKONATOR_ZIP: /tmp/rel/markonator-extension.zip
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npx playwright test --project=extension --retries=2
+
+      - name: Upload report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-verify-report
+          path: playwright-report/
+          retention-days: 7

@@ -43,5 +43,16 @@ module.exports = defineConfig({
                 deviceScaleFactor: 2,
             },
         },
+        {
+            name: "zip",
+            testMatch: /zip\.spec\.js/,
+            use: { ...devices["Desktop Chrome"] },
+        },
+        {
+            name: "extension",
+            testMatch: /extension\.spec\.js/,
+            retries: 0,
+            use: { ...devices["Desktop Chrome"] },
+        },
     ],
 });

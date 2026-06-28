@@ -38,6 +38,15 @@ jobs:
       - name: Run tests
         run: npx playwright test --project=chromium
 
+      - name: Run release-zip conformance + page tests
+        run: npx playwright test --project=zip
+
+      - name: Install xvfb (for the headed unpacked-extension test)
+        run: sudo apt-get install -y xvfb
+
+      - name: Run unpacked-extension test (headed, under xvfb)
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npx playwright test --project=extension --retries=2
+
       - name: Capture screenshots
         if: always()
         continue-on-error: true
