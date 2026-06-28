@@ -116,6 +116,10 @@ jobs:
         continue-on-error: true
         run: bash scripts/make-gif.sh screenshots screenshots/markonator.gif
 
+      - name: Generate 1280x800 Web Store screenshots
+        continue-on-error: true
+        run: bash scripts/make-store-shots.sh screenshots store-shots
+
       - name: Commit bump, tag, push
         run: |
           git config user.name "github-actions[bot]"
@@ -133,6 +137,7 @@ jobs:
           ASSETS="extension/markonator-extension.zip"
           if [ -f screenshots/markonator.gif ]; then ASSETS="$ASSETS screenshots/markonator.gif"; fi
           if [ -f screenshots/markonator-hero.png ]; then ASSETS="$ASSETS screenshots/markonator-hero.png"; fi
+          for f in store-shots/*.png; do [ -f "$f" ] && ASSETS="$ASSETS $f"; done
           gh release create ${{ steps.ver.outputs.tag }} \
             $ASSETS \
             --title "${{ steps.ver.outputs.tag }}" \
