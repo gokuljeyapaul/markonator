@@ -1,0 +1,134 @@
+name: release
+
+# On any change landing on main, bump the version, rebuild the extension,
+# tag, and publish a GitHub release with the Web Store-ready zip attached.
+# Add "[skip release]" to a commit message to skip releasing on that push.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "README.md"
+      - "**/*.md"
+      - ".github/**"
+      - "tests/**"
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump (overrides auto-detection)"
+        required: false
+        default: auto
+        type: choice
+        options: [auto, patch, minor, major]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    # Skip when the triggering commit opts out, or when CI hasn't been added yet.
+    if: "!contains(toJSON(github.event.commits.*.message), '[skip release]')"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Compute next version
+        id: ver
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import subprocess, re, os
+          bump = "${{ github.event.inputs.bump }}" or "auto"
+          try:
+              latest = subprocess.check_output(
+                  ["git", "describe", "--tags", "--abbrev=0"], text=True
+              ).strip()
+          except Exception:
+              latest = "v0.0.0"
+          m = re.match(r"v?(\d+)\.(\d+)\.(\d+)", latest)
+          major, minor, patch = (
+              (int(m.group(1)), int(m.group(2)), int(m.group(3))) if m else (0, 0, 0)
+          )
+          if bump not in ("auto", "patch", "minor", "major", ""):
+              bump = "auto"
+          if bump in ("major",):
+              major, minor, patch = major + 1, 0, 0
+          elif bump in ("minor",):
+              minor, patch = minor + 1, 0
+          else:
+              # auto: scan commit subjects+bodies since the last tag for #minor/#major
+              logs = ""
+              if latest != "v0.0.0":
+                  try:
+                      logs = subprocess.check_output(
+                          ["git", "log", f"{latest}..HEAD", "--pretty=%s%n%b"],
+                          text=True, errors="replace",
+                      ).lower()
+                  except Exception:
+                      logs = ""
+              if "#major" in logs:
+                  major, minor, patch = major + 1, 0, 0
+              elif "#minor" in logs:
+                  minor, patch = minor + 1, 0
+              else:
+                  patch += 1
+          ver = f"{major}.{minor}.{patch}"
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"version={ver}\n")
+              f.write(f"tag=v{ver}\n")
+          print(f"next version: {ver}")
+          PY
+
+      - name: Bump extension manifest version
+        run: |
+          python3 - <<'PY'
+          import json, os
+          ver = "${{ steps.ver.outputs.version }}"
+          p = "extension/manifest.json"
+          m = json.load(open(p))
+          m["version"] = ver
+          with open(p, "w") as f:
+              json.dump(m, f, indent=4)
+              f.write("\n")
+          print("manifest version ->", ver)
+          PY
+
+      - name: Build the extension + zip
+        run: python3 build.py
+
+      - name: Commit bump, tag, push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add extension/manifest.json
+          git commit -m "chore: release ${{ steps.ver.outputs.tag }} [skip ci]" || true
+          git tag ${{ steps.ver.outputs.tag }}
+          git push
+          git push --tags
+
+      - name: Publish GitHub release with the extension zip
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create ${{ steps.ver.outputs.tag }} \
+            extension/marginalia-extension.zip \
+            --title "${{ steps.ver.outputs.tag }}" \
+            --notes "Auto-built release.
+
+          **Install the Chrome extension:**
+          1. Download and unzip \`marginalia-extension.zip\` (attached).
+          2. \`chrome://extensions\` → Developer mode → Load unpacked → select the unzipped folder.
+
+          **Web app:** \`python3 -m http.server 8000\` in the repo root → open http://localhost:8000/
+
+          See the README for the full review workflow and the \`marginalia:\` comment format." \
+            --generate-notes

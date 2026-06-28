@@ -1885,3 +1885,22 @@
                 }
             })();
         
+
+/* ---------- Test hook (only active when the page is loaded with ?test=1) ----------
+   Exposes internals for the automated test suite. Has no effect in normal use
+   and exposes nothing unless the query string explicitly opts in. */
+if (
+    typeof window !== "undefined" &&
+    new URLSearchParams(location.search).get("test") === "1"
+) {
+    window.__marginalia = {
+        state,
+        parseMarkdown,
+        serializeDoc,
+        fileLineRanges,
+        buildAgentPrompt,
+        flexFind,
+        loadText,
+        renderDoc,
+    };
+}

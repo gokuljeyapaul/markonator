@@ -1,0 +1,15 @@
+{
+    "name": "marginalia",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Review Markdown plans & skills. Leave inline comments that persist back into the file in a format any coding agent can read.",
+    "scripts": {
+        "test": "playwright test",
+        "test:headed": "playwright test --headed",
+        "test:ui": "playwright test --ui",
+        "report": "playwright show-report"
+    },
+    "devDependencies": {
+        "@playwright/test": "^1.48.0"
+    }
+}

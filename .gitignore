@@ -4,6 +4,11 @@
 # Node / editor
 node_modules/
 *.log
+package-lock.json
+
+# Playwright
+test-results/
+playwright-report/
 
 # Generated extension build artifacts (run `python3 build.py` to regenerate).
 # The extension's own source (manifest.json, background.js) IS committed;
