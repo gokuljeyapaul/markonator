@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
-# Generate a voiced promo video for YouTube: Microsoft neural TTS (edge-tts)
-# narrates each scene timed to the app screenshot frames, a soft synthesized
-# music bed plays under it, and ffmpeg renders a 1920x1080 H.264 MP4.
+# Generate a voiced promo video for YouTube:
+#   - intro card (branded marquee tile) + peppy music
+#   - 8 app-demo scenes with neural voice-over + calm music
+#   - outro card (branded marquee tile) + peppy music
+# Renders a 1920x1080 H.264 MP4.
 #
-# Needs the edge-tts Python tool on PATH (or set $EDGE_TTS) and network access
-# for the one-time voice synthesis. Cross-platform (not macOS-only).
+# Needs the edge-tts Python tool (set $EDGE_TTS; default .venv/bin/edge-tts) and
+# network access for the one-time voice synthesis. Cross-platform.
 #
-# Usage: scripts/make-promo-voiced.sh <screenshots-dir> <out.mp4> [endcard.png]
-# Env: EDGE_TTS (default .venv/bin/edge-tts), VOICE (default en-US-AriaNeural),
-#      RATE (default +0%; e.g. -5% for a slower read).
+# Usage: scripts/make-promo-voiced.sh <screenshots-dir> <out.mp4> [brand.png]
+# Env: EDGE_TTS, VOICE (default en-US-AriaNeural), RATE (default +0%).
 set -euo pipefail
 
 if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
-    echo "usage: $0 <screenshots-dir> <out.mp4> [endcard.png]" >&2
+    echo "usage: $0 <screenshots-dir> <out.mp4> [brand.png]" >&2
     exit 1
 fi
 
@@ -22,11 +23,15 @@ OUT="$(cd "$(dirname "$OUT")" && pwd)/$(basename "$OUT")"
 EDGE_TTS="${EDGE_TTS:-.venv/bin/edge-tts}"
 VOICE="${VOICE:-en-US-AriaNeural}"
 RATE="${RATE:-+0%}"
+BRAND="${3:-promo/marquee.png}"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 mkdir -p "$WORK/frames"
 
-# Scenes: frame | narration. Frames are pre-scaled to 1920x1080 (padded, dark).
+INTRO_HOLD=3.5
+OUTRO_HOLD=5.0
+PAD=0.4
+
 SCENES=(
 "shot-01.png|Markonator. The Markdown reviewer, built for people who work with coding agents."
 "shot-02.png|Open any plan, skill, or spec. It renders like a page, with line numbers."
@@ -37,35 +42,14 @@ SCENES=(
 "shot-07.png|Six themes. Eight fonts. Everything bundled, so it works fully offline."
 "shot-08.png|One click copies a prompt that tells your agent exactly what to fix, and where."
 )
+INTRO_TEXT="Markonator."
+OUTRO_TEXT="Markonator. Markdown, annotated. Find it on GitHub."
 
-# Pre-scale each screenshot frame to 1920x1080 (centered, dark bars).
-i=0
-for s in "${SCENES[@]}"; do
-    f="${s%%|*}"
-    ffmpeg -y -hide_banner -loglevel error -i "$SRC/$f" \
+scale1920() { # $1 in $2 out
+    ffmpeg -y -hide_banner -loglevel error -i "$1" \
         -vf "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:color=#0d1117" \
-        -frames:v 1 "$WORK/frames/f$i.png"
-    i=$((i + 1))
-done
-
-# End card: reuse the branded marquee PNG (avoids the drawtext filter, which
-# isn't in every ffmpeg build). Scaled/padded to 1920x1080.
-ENDCARD_SRC="${3:-promo/marquee.png}"
-if [ -f "$ENDCARD_SRC" ]; then
-    ffmpeg -y -hide_banner -loglevel error -i "$ENDCARD_SRC" \
-        -vf "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:color=#0d1117" \
-        -frames:v 1 "$WORK/frames/endcard.png"
-else
-    cp "$WORK/frames/f$((i-1)).png" "$WORK/frames/endcard.png"
-fi
-
-# Narration per scene -> wav. The video frame for scene i is held for
-# (narration_duration + PAD). The audio track places the narration clip followed
-# by PAD silence, so scene (i+1)'s voice begins exactly when its frame appears.
-PAD=0.4
-ENDHOLD=3.2
-ffmpeg -y -hide_banner -loglevel error -f lavfi -i "anullsrc=r=44100:cl=mono" -t "$PAD" -c:a pcm_s16le "$WORK/pad.wav"
-ffmpeg -y -hide_banner -loglevel error -f lavfi -i "anullsrc=r=44100:cl=mono" -t "$ENDHOLD" -c:a pcm_s16le "$WORK/endhold.wav"
+        -frames:v 1 "$2"
+}
 
 # Retry the (free, sometimes rate-limited) edge-tts endpoint a few times.
 tts() {
@@ -75,57 +59,106 @@ tts() {
         echo "edge-tts retry $n ..." >&2; sleep 2
     done
 }
+voicewav() { # $1 text $2 out.wav
+    tts "$1" "$WORK/_t.mp3"
+    ffmpeg -y -hide_banner -loglevel error -i "$WORK/_t.mp3" -ar 44100 -ac 1 -c:a pcm_s16le "$2"
+}
+silence() { # $1 seconds $2 out.wav
+    ffmpeg -y -hide_banner -loglevel error -f lavfi -i "anullsrc=r=44100:cl=mono" -t "$1" -c:a pcm_s16le "$2"
+}
+dur_of() { ffprobe -v error -show_entries format=duration -of default=nk=1:nw=1 "$1"; }
 
-VDUR="$WORK/vlist.txt"
-: > "$VDUR"
-ADUR="$WORK/alist.txt"
-: > "$ADUR"
-TOTAL=0
+# Pre-scale frames + brand tile to 1920x1080.
 i=0
 for s in "${SCENES[@]}"; do
-    txt="${s#*|}"
-    tts "$txt" "$WORK/v$i.mp3"
-    ffmpeg -y -hide_banner -loglevel error -i "$WORK/v$i.mp3" -ar 44100 -ac 1 -c:a pcm_s16le "$WORK/v$i.wav"
-    d=$(ffprobe -v error -show_entries format=duration -of default=nk=1:nw=1 "$WORK/v$i.wav")
+    scale1920 "$SRC/${s%%|*}" "$WORK/frames/f$i.png"; i=$((i + 1))
+done
+scale1920 "$BRAND" "$WORK/frames/brand.png"
+
+# Generate demo voice clips, durations, and the demo audio/video lists.
+VDUR="$WORK/vlist.txt"; : > "$VDUR"
+ADEMO="$WORK/ademo.txt"; : > "$ADEMO"
+DEMO_TOTAL=0
+i=0
+for s in "${SCENES[@]}"; do
+    voicewav "${s#*|}" "$WORK/v$i.wav"
+    d=$(dur_of "$WORK/v$i.wav")
     dur=$(awk "BEGIN{printf \"%.3f\", $d + $PAD}")
     echo "file '$WORK/frames/f$i.png'" >> "$VDUR"
     echo "duration $dur" >> "$VDUR"
-    echo "file '$WORK/v$i.wav'" >> "$ADUR"
-    echo "file '$WORK/pad.wav'" >> "$ADUR"
-    TOTAL=$(awk "BEGIN{printf \"%.3f\", $TOTAL + $dur}")
+    echo "file '$WORK/v$i.wav'" >> "$ADEMO"
+    echo "file '$WORK/pad.wav'" >> "$ADEMO"
+    DEMO_TOTAL=$(awk "BEGIN{printf \"%.3f\", $DEMO_TOTAL + $dur}")
     i=$((i + 1))
 done
+echo "DEMO total: ${DEMO_TOTAL}s"
 
-# End card scene: endcard held for ENDHOLD; matching silence on the audio track.
-echo "file '$WORK/frames/endcard.png'" >> "$VDUR"
-echo "duration $ENDHOLD" >> "$VDUR"
-echo "file '$WORK/frames/endcard.png'" >> "$VDUR"   # concat requires a trailing file
-echo "file '$WORK/endhold.wav'" >> "$ADUR"
-TOTAL=$(awk "BEGIN{printf \"%.3f\", $TOTAL + $ENDHOLD}")
-FADEOUT=$(awk "BEGIN{printf \"%.2f\", $TOTAL - 3}")
-echo "TOTAL duration: ${TOTAL}s (fade out at ${FADEOUT}s)"
+# Intro + outro voice + matching silence to fill their card holds.
+voicewav "$INTRO_TEXT" "$WORK/vintro.wav"
+ID=$(dur_of "$WORK/vintro.wav")
+INTRO_SIL=$(awk "BEGIN{printf \"%.3f\", ($INTRO_HOLD - $ID) * (($INTRO_HOLD > $ID) + 0)}")
+voicewav "$OUTRO_TEXT" "$WORK/voutro.wav"
+OD=$(dur_of "$WORK/voutro.wav")
+OUTRO_SIL=$(awk "BEGIN{printf \"%.3f\", ($OUTRO_HOLD - $OD) * (($OUTRO_HOLD > $OD) + 0)}")
 
-# Narration track = voice clips interleaved with the matching silences; exactly
-# TOTAL long and in sync with the frames.
-ffmpeg -y -hide_banner -loglevel error -f concat -safe 0 -i "$ADUR" -c:a pcm_s16le "$WORK/narration_full.wav"
+silence "$PAD" "$WORK/pad.wav"
+silence "$INTRO_SIL" "$WORK/intro_sil.wav"
+silence "$OUTRO_SIL" "$WORK/outro_sil.wav"
 
-# Soft synthesized music bed (calm two-note drone with tremolo + lowpass), faded.
-ffmpeg -y -hide_banner -loglevel error \
-    -f lavfi -i "sine=f=110:duration=$TOTAL" -f lavfi -i "sine=f=164.81:duration=$TOTAL" \
-    -filter_complex "[0]tremolo=f=0.15:d=0.25,lowpass=f=700[a];[1]tremolo=f=0.2:d=0.3,lowpass=f=700[b];\
-[a]volume=0.6[a2];[b]volume=0.5[b2];[a2][b2]amix=inputs=2,afade=t=in:st=0:d=2,afade=t=out:st=$FADEOUT:d=3,volume=0.16" \
-    -c:a pcm_s16le "$WORK/music.wav"
+TOTAL=$(awk "BEGIN{printf \"%.3f\", $INTRO_HOLD + $DEMO_TOTAL + $OUTRO_HOLD}")
+FADEOUT=$(awk "BEGIN{printf \"%.2f\", $TOTAL - 2}")
+echo "TOTAL: ${TOTAL}s"
+
+# Narration track: intro voice + intro silence + demo (voices+pads) + outro voice + outro silence.
+ALIST="$WORK/alist.txt"
+{
+  echo "file '$WORK/vintro.wav'"; echo "file '$WORK/intro_sil.wav'"
+  cat "$ADEMO"
+  echo "file '$WORK/voutro.wav'"; echo "file '$WORK/outro_sil.wav'"
+} > "$ALIST"
+ffmpeg -y -hide_banner -loglevel error -f concat -safe 0 -i "$ALIST" -c:a pcm_s16le "$WORK/narration.wav"
+
+# Music beds.
+gen_peppy() { # $1 duration $2 out
+    local D=$1 out=$2 f
+    f=$(awk "BEGIN{printf \"%.2f\", $D-1}")
+    ffmpeg -y -hide_banner -loglevel error \
+        -f lavfi -i "sine=f=220:duration=$D" -f lavfi -i "sine=f=277.18:duration=$D" -f lavfi -i "sine=f=329.63:duration=$D" \
+        -filter_complex "[0]tremolo=f=2.4:d=0.45,lowpass=f=1800[a];[1]tremolo=f=2.4:d=0.45,lowpass=f=1800[b];[2]tremolo=f=3:d=0.4,lowpass=f=2200[c];[a]volume=0.5[a2];[b]volume=0.5[b2];[c]volume=0.45[c2];[a2][b2][c2]amix=inputs=3,afade=t=in:st=0:d=0.4,afade=t=out:st=$f:d=1,volume=0.2" \
+        -c:a pcm_s16le "$out"
+}
+gen_calm() { # $1 duration $2 out
+    local D=$1 out=$2 f
+    f=$(awk "BEGIN{printf \"%.2f\", $D-2}")
+    ffmpeg -y -hide_banner -loglevel error \
+        -f lavfi -i "sine=f=110:duration=$D" -f lavfi -i "sine=f=164.81:duration=$D" \
+        -filter_complex "[0]tremolo=f=0.15:d=0.25,lowpass=f=700[a];[1]tremolo=f=0.2:d=0.3,lowpass=f=700[b];[a]volume=0.6[a2];[b]volume=0.5[b2];[a2][b2]amix=inputs=2,afade=t=in:st=0:d=1,afade=t=out:st=$f:d=2,volume=0.15" \
+        -c:a pcm_s16le "$out"
+}
+gen_peppy "$INTRO_HOLD" "$WORK/peppy_in.wav"
+gen_calm "$DEMO_TOTAL" "$WORK/calm.wav"
+gen_peppy "$OUTRO_HOLD" "$WORK/peppy_out.wav"
+MLIST="$WORK/mlist.txt"
+{ echo "file '$WORK/peppy_in.wav'"; echo "file '$WORK/calm.wav'"; echo "file '$WORK/peppy_out.wav'"; } > "$MLIST"
+ffmpeg -y -hide_banner -loglevel error -f concat -safe 0 -i "$MLIST" -c:a pcm_s16le "$WORK/music.wav"
 
 # Mix narration (full) + music (quiet) -> stereo AAC.
-ffmpeg -y -hide_banner -loglevel error -i "$WORK/narration_full.wav" -i "$WORK/music.wav" \
+ffmpeg -y -hide_banner -loglevel error -i "$WORK/narration.wav" -i "$WORK/music.wav" \
     -filter_complex "[0]aformat=channel_layouts=stereo,volume=1.0[n];[1]aformat=channel_layouts=stereo,volume=1.0[m];[n][m]amix=inputs=2:duration=longest:normalize=0" \
     -c:a aac -b:a 192k "$WORK/audio.m4a"
 
-# Video from the frame concat (each image held for its scene duration).
-ffmpeg -y -hide_banner -loglevel error -f concat -safe 0 -i "$VDUR" \
+# Video: intro card -> demo frames -> outro card.
+VLIST="$WORK/vlist2.txt"
+{
+  echo "file '$WORK/frames/brand.png'"; echo "duration $INTRO_HOLD"
+  cat "$VDUR"
+  echo "file '$WORK/frames/brand.png'"; echo "duration $OUTRO_HOLD"
+  echo "file '$WORK/frames/brand.png'"
+} > "$VLIST"
+ffmpeg -y -hide_banner -loglevel error -f concat -safe 0 -i "$VLIST" \
     -vf "fps=25,setsar=1" -c:v libx264 -pix_fmt yuv420p -preset medium "$WORK/video.mp4"
 
-# Mux video + audio.
+# Mux.
 ffmpeg -y -hide_banner -loglevel error -i "$WORK/video.mp4" -i "$WORK/audio.m4a" \
     -c:v copy -c:a copy -shortest -movflags +faststart "$OUT"
 

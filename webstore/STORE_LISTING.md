@@ -10,7 +10,12 @@ Copy/paste these into the Chrome Web Store developer dashboard
 - **Language:** English
 - **Single purpose:** Review and annotate Markdown documents inline, with comments saved back into the file.
 - **Permission justification — `sidePanel`:** Opens Markonator in the browser side panel so users can review a Markdown document beside their work.
+- **Justification for remote code use:** Markonator does **not** use any remote code. All scripts (app.js, `marked`, `DOMPurify`) and all content fonts are bundled locally in the package; the extension makes zero network requests. (The `edge-tts`/`ffmpeg` tooling runs only at release-build time to generate the promo video, never inside the extension.)
+- **Data usage certification:** Markonator does not collect, transmit, sell, or share any personal data. All document content, comments, and preferences are stored locally in the user's browser (IndexedDB / localStorage) and on the user's own disk only when they choose Save/Download. No analytics, no telemetry, no advertising. The only permission is `sidePanel`. See PRIVACY.md.
 - **Privacy policy URL:** https://github.com/gokuljeyapaul/markonator/blob/main/PRIVACY.md
+
+### Settings page (do once in the dashboard)
+- **Publisher contact email:** add your email on the Settings page, then click **verify** (GitHub sends a verification mail) — the item can't be published until the contact email is verified.
 
 ## Assets — open each link to download (latest release)
 
