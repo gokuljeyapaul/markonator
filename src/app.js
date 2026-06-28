@@ -1,4 +1,5 @@
             "use strict";
+            window.__marg_loaded = (window.__marg_loaded || 0) + 1;
             // When loaded inside the Chrome extension, the page sets
             // <meta name="marginalia-mode" content="extension">. We use that to
             // skip PWA-only features (service worker + install prompt).

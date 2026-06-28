@@ -24,16 +24,24 @@ agreed
 /* ---------------- Logic tests (via the ?test=1 hook) ---------------- */
 test.describe("core logic", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/index.html?test=1");
-    // Surface exactly why the test hook fails, if it does.
-    await page.waitForFunction(() => window.__marg_test === true, null, {
-      timeout: 8000,
+    const errors = [];
+    page.on("pageerror", (e) => errors.push("PAGEERROR: " + e.message));
+    page.on("console", (m) => {
+      if (m.type() === "error") errors.push("CONSOLE: " + m.text());
     });
-    const err = await page.evaluate(() => window.__marginalia_err);
-    if (err) throw new Error("test hook threw: " + err);
-    await page.waitForFunction(() => !!window.__marginalia, null, {
-      timeout: 5000,
-    });
+    await page.goto("/index.html?test=1", { waitUntil: "load" });
+    await page.waitForTimeout(300);
+    const diag = await page.evaluate(() => ({
+      search: location.search,
+      href: location.href,
+      marg_loaded: window.__marg_loaded,
+      marg_test: window.__marg_test,
+      marg_err: window.__marginalia_err,
+      marginalia_type: typeof window.__marginalia,
+      readyState: document.readyState,
+      hasApp: !!document.getElementById("openBtn"),
+    }));
+    console.log("DIAG", JSON.stringify(diag), "ERRS", JSON.stringify(errors));
   });
 
   test("parse -> serialize round-trips stably", async ({ page }) => {
