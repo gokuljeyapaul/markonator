@@ -109,6 +109,9 @@ jobs:
         continue-on-error: true
         run: npx playwright test --project=screenshots --reporter=list
 
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
       - name: Build demo GIF
         continue-on-error: true
         run: bash scripts/make-gif.sh screenshots screenshots/marginalia.gif

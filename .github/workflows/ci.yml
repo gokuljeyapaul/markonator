@@ -43,6 +43,10 @@ jobs:
         continue-on-error: true
         run: npx playwright test --project=screenshots --reporter=list
 
+      - name: Install ffmpeg
+        if: always()
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
       - name: Build demo GIF
         if: always()
         continue-on-error: true
