@@ -145,6 +145,7 @@ jobs:
           if [ -f screenshots/markonator-hero.png ]; then ASSETS="$ASSETS screenshots/markonator-hero.png"; fi
           for f in store-shots/*.png; do [ -f "$f" ] && ASSETS="$ASSETS $f"; done
           [ -f promo/markonator-marquee.jpg ] && ASSETS="$ASSETS promo/markonator-marquee.jpg"
+          [ -f icons/icon128.png ] && ASSETS="$ASSETS icons/icon128.png"
           gh release create ${{ steps.ver.outputs.tag }} \
             $ASSETS \
             --title "${{ steps.ver.outputs.tag }}" \
