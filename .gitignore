@@ -10,9 +10,12 @@ package-lock.json
 test-results/
 playwright-report/
 
-# Generated screenshots (built by tests/screenshots.spec.js + scripts/make-gif.sh).
-# The canonical hero PNG + demo GIF live in docs/ and on GitHub releases.
+# Generated screenshots + Web Store media (built by tests/screenshots.spec.js
+# and the scripts in scripts/). The canonical assets live on GitHub releases
+# (see webstore/STORE_LISTING.md for download URLs).
 screenshots/
+store-shots/
+promo/
 
 # Generated extension build artifacts (run `python3 build.py` to regenerate).
 # The extension's own source (manifest.json, background.js) IS committed;

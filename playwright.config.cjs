@@ -64,5 +64,15 @@ module.exports = defineConfig({
                 deviceScaleFactor: 1,
             },
         },
+        {
+            name: "small-promo",
+            testMatch: /small-promo\.spec\.js/,
+            retries: 0,
+            use: {
+                ...devices["Desktop Chrome"],
+                viewport: { width: 440, height: 280 },
+                deviceScaleFactor: 1,
+            },
+        },
     ],
 });

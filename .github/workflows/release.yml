@@ -1,7 +1,11 @@
 name: release
 
-# On any change landing on main, bump the version, rebuild the extension,
-# tag, and publish a GitHub release with the Web Store-ready zip attached.
+# Lightweight package release: on any change landing on main, bump the version,
+# build the extension zip, tag, and publish a GitHub release with the zip + the
+# 128px store icon. The media-heavy Web Store prep (screenshots, promo tiles,
+# demo GIF, promo video) runs separately in webstore-prep.yml AFTER this release
+# is published.
+#
 # Add "[skip release]" to a commit message to skip releasing on that push.
 
 on:
@@ -12,10 +16,11 @@ on:
       - "**/*.md"
       - ".github/**"
       - "tests/**"
+      - "webstore/**"
   workflow_dispatch:
     inputs:
       bump:
-        description: "Version bump (overrides auto-detection)"
+        description: "Version bump (overrides auto)"
         required: false
         default: auto
         type: choice
@@ -26,7 +31,6 @@ permissions:
 
 jobs:
   release:
-    # Skip when the triggering commit opts out, or when CI hasn't been added yet.
     if: "!contains(toJSON(github.event.commits.*.message), '[skip release]')"
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -40,16 +44,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.x"
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Install Playwright deps
-        run: |
-          npm install
-          npx playwright install --with-deps chromium
 
       - name: Compute next version
         id: ver
@@ -70,11 +64,7 @@ jobs:
           )
           if bump not in ("auto", "patch", "minor", "major", ""):
               bump = "auto"
-          # Patch bump by default. Use a minor/major bump only when explicitly
-          # requested via the workflow_dispatch input (run the workflow
-          # manually in the Actions tab). Do NOT scan commit messages for
-          # #minor/#major tags — that is fragile (a docs commit mentioning the
-          # keywords would bump the version).
+          # Patch bump by default; minor/major only via manual workflow_dispatch.
           if bump == "major":
               major, minor, patch = major + 1, 0, 0
           elif bump == "minor":
@@ -91,7 +81,7 @@ jobs:
       - name: Bump extension manifest version
         run: |
           python3 - <<'PY'
-          import json, os
+          import json
           ver = "${{ steps.ver.outputs.version }}"
           p = "extension/manifest.json"
           m = json.load(open(p))
@@ -105,27 +95,6 @@ jobs:
       - name: Build the extension + zip
         run: python3 build.py
 
-      - name: Capture screenshots
-        continue-on-error: true
-        run: npx playwright test --project=screenshots --reporter=list
-
-      - name: Install ffmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
-
-      - name: Build demo GIF
-        continue-on-error: true
-        run: bash scripts/make-gif.sh screenshots screenshots/markonator.gif
-
-      - name: Generate 1280x800 Web Store screenshots
-        continue-on-error: true
-        run: bash scripts/make-store-shots.sh screenshots store-shots
-
-      - name: Generate 1400x560 marquee promo tile
-        continue-on-error: true
-        run: |
-          npx playwright test --project=marquee --reporter=list
-          ffmpeg -y -hide_banner -loglevel error -i promo/marquee.png -frames:v 1 promo/markonator-marquee.jpg
-
       - name: Commit bump, tag, push
         run: |
           git config user.name "github-actions[bot]"
@@ -136,18 +105,13 @@ jobs:
           git push
           git push --tags
 
-      - name: Publish GitHub release with the extension zip + demo GIF
+      - name: Publish GitHub release (package + store icon)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ASSETS="extension/markonator-extension.zip"
-          if [ -f screenshots/markonator.gif ]; then ASSETS="$ASSETS screenshots/markonator.gif"; fi
-          if [ -f screenshots/markonator-hero.png ]; then ASSETS="$ASSETS screenshots/markonator-hero.png"; fi
-          for f in store-shots/*.png; do [ -f "$f" ] && ASSETS="$ASSETS $f"; done
-          [ -f promo/markonator-marquee.jpg ] && ASSETS="$ASSETS promo/markonator-marquee.jpg"
-          [ -f icons/icon128.png ] && ASSETS="$ASSETS icons/icon128.png"
           gh release create ${{ steps.ver.outputs.tag }} \
-            $ASSETS \
+            extension/markonator-extension.zip \
+            icons/icon128.png \
             --title "${{ steps.ver.outputs.tag }}" \
             --notes "Auto-built release.
 
@@ -157,5 +121,7 @@ jobs:
 
           **Web app:** \`python3 -m http.server 8000\` in the repo root → open http://localhost:8000/
 
-          See the README for the full review workflow and the \`markonator:\` comment format." \
+          Web Store media (screenshots, promo tiles, demo GIF, promo video) are
+          generated and attached by the \`webstore-prep\` workflow shortly after
+          this release is published. See \`webstore/STORE_LISTING.md\`." \
             --generate-notes

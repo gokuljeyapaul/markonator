@@ -56,32 +56,17 @@ jobs:
         if: always()
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Build demo GIF
+      - name: Build demo GIF (PR visual preview)
         if: always()
         continue-on-error: true
         run: bash scripts/make-gif.sh screenshots screenshots/markonator.gif
 
-      - name: Generate 1280x800 Web Store screenshots
-        if: always()
-        continue-on-error: true
-        run: bash scripts/make-store-shots.sh screenshots store-shots
-
-      - name: Generate 1400x560 marquee promo tile
-        if: always()
-        continue-on-error: true
-        run: |
-          npx playwright test --project=marquee --reporter=list
-          ffmpeg -y -hide_banner -loglevel error -i promo/marquee.png -frames:v 1 promo/markonator-marquee.jpg
-
-      - name: Upload screenshots + GIF + store shots + marquee
+      - name: Upload screenshots + GIF
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: screenshots
-          path: |
-            screenshots/
-            store-shots/
-            promo/
+          path: screenshots/
           if-no-files-found: ignore
           retention-days: 14
 

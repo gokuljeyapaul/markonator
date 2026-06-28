@@ -14,7 +14,7 @@ test.beforeAll(() => {
 });
 
 test("generate 1400x560 marquee promo tile", async ({ page }) => {
-    await page.goto("/promo-marquee.html", { waitUntil: "load" });
+    await page.goto("/webstore/promo-marquee.html", { waitUntil: "load" });
     await page.waitForTimeout(250); // let the SVG/gradient paint
     await page.screenshot({
         path: path.join(OUT, "marquee.png"),
