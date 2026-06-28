@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+
+# Node / editor
+node_modules/
+*.log
+
+# Generated extension build artifacts (run `python3 build.py` to regenerate).
+# The extension's own source (manifest.json, background.js) IS committed;
+# these are derived from the shared src/ + vendor/ + icons/ at the repo root.
+extension/app.js
+extension/styles.css
+extension/vendor/
+extension/icons/
+extension/index.html
+extension/sidepanel.html
+extension/*.zip

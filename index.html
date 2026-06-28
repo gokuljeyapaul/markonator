@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
+        <meta name="theme-color" content="#0d1117" />
+        <title>Marginalia</title>
+        <link rel="manifest" href="./manifest.json" />
+        <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="./icon.svg" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Lora:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="src/styles.css" />
+    </head>
+    <body>
+        <header>
+            <div class="brand"><span class="dot"></span> Marginalia</div>
+            <div
+                id="fileTag"
+                class="file-tag"
+                hidden
+                title="Click to set the full file path used in agent prompts"
+            >
+                <span class="unsaved"></span>
+                <span class="name" id="fileName"></span>
+                <span class="edit-path" title="Edit path">✎</span>
+                <input
+                    type="text"
+                    id="pathInput"
+                    class="path-input"
+                    spellcheck="false"
+                    hidden
+                />
+            </div>
+            <div class="spacer"></div>
+            <div class="toolbar">
+                <div class="theme-picker">
+                    <button id="themeBtn" class="icon-btn" title="Theme">
+                        <span class="theme-swatch auto" id="themeSwatch"></span>
+                        <span class="chev">▾</span>
+                    </button>
+                    <div id="themePopover" class="theme-popover"></div>
+                </div>
+                <div class="font-picker">
+                    <button id="fontBtn" class="icon-btn" title="Content font">Aa</button>
+                    <div id="fontPopover" class="font-popover"></div>
+                </div>
+                <button id="autoSaveBtn" class="icon-btn toggle-icon" title="Auto-save: off" aria-pressed="false">🔁</button>
+                <button id="openBtn" class="icon-btn" title="Open or switch .md file">📂</button>
+                <button id="saveBtn" class="icon-btn primary" title="Save comments back to file" disabled>💾</button>
+                <button id="saveCopyBtn" class="icon-btn primary" title="Save, then copy the agent prompt" disabled>📋</button>
+                <button id="downloadBtn" class="icon-btn" title="Download .md with comments">⬇️</button>
+                <button id="agentPromptBtn" class="icon-btn" title="Copy agent-ready prompt" disabled>🤖</button>
+                <button id="installBtn" class="icon-btn" hidden title="Install as an app">⧉</button>
+                <button id="resetBtn" class="icon-btn danger" title="Clear all browser state">🗑️</button>
+            </div>
+        </header>
+
+        <main id="main">
+            <div id="emptyState" class="empty">
+                <div class="dropzone" id="dropzone">
+                    <h2>Review a Markdown plan or skill</h2>
+                    <p>
+                        Open an <code>.md</code> file, drop one here, or paste
+                        content. Comments are embedded inline as
+                        <code>&lt;!-- marginalia: … --&gt;</code> blocks so any
+                        coding agent can read them.
+                    </p>
+                    <div class="actions">
+                        <button class="primary" id="openBtn2">
+                            📂 Open file
+                        </button>
+                    </div>
+                </div>
+                <div class="paste-area">
+                    <p
+                        style="
+                            color: var(--text-soft);
+                            font-size: 12px;
+                            margin: 0 0 6px;
+                        "
+                    >
+                        …or paste markdown content:
+                    </p>
+                    <textarea
+                        id="pasteArea"
+                        placeholder="# Plan&#10;...paste markdown here..."
+                    ></textarea>
+                    <div
+                        style="
+                            margin-top: 8px;
+                            display: flex;
+                            justify-content: flex-end;
+                        "
+                    >
+                        <button id="loadPasteBtn">Load pasted content</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="bannerWarn" class="banner warn" hidden></div>
+            <div id="doc" class="doc" hidden></div>
+        </main>
+
+        <!-- Composer -->
+        <div class="composer-backdrop" id="composerBackdrop"></div>
+        <div class="composer" id="composer">
+            <div class="composer-head">
+                <span class="badge" id="cBadge">Line</span>
+                <span class="target" id="cTarget"></span>
+                <span class="spacer"></span>
+                <button class="ghost" id="cClose" style="padding: 2px 8px">
+                    ✕
+                </button>
+            </div>
+            <div class="mobile-tabs">
+                <button data-tab="edit" class="active">✏️ Write</button>
+                <button data-tab="preview">👁 Preview</button>
+            </div>
+            <div class="composer-body" id="composerBody">
+                <div class="pane editor-pane">
+                    <textarea
+                        id="cText"
+                        placeholder="Comment in markdown…  e.g. enum value can be `HELLO` or `WORLD`"
+                    ></textarea>
+                </div>
+                <div class="pane preview-pane" id="previewPane">
+                    <div class="md" id="cPreview">
+                        <span class="ph">Preview appears here…</span>
+                    </div>
+                </div>
+            </div>
+            <div class="composer-foot">
+                <span class="hint"
+                    >Markdown supported · Esc to cancel · ⌘/Ctrl+Enter to
+                    save</span
+                >
+                <span class="spacer"></span>
+                <button id="cCancel">Cancel</button>
+                <button id="cLeave" hidden>Leave unsaved</button>
+                <button id="cSubmit" class="primary">Add comment</button>
+            </div>
+        </div>
+
+        <!-- Floating cursor-following add-comment button -->
+        <button id="floatingAdd" title="Add a comment on this block">+</button>
+
+        <!-- Selection hint -->
+        <div class="sel-hint" id="selHint">💬 Comment on selection</div>
+
+        <!-- Confirm modal -->
+        <div class="modal-backdrop" id="modalBackdrop">
+            <div class="modal">
+                <h3 id="modalTitle"></h3>
+                <p id="modalBody"></p>
+                <div class="actions" id="modalActions"></div>
+            </div>
+        </div>
+
+        <div class="toast-wrap" id="toastWrap"></div>
+
+        <script src="vendor/marked.min.js"></script>
+        <script src="vendor/purify.min.js"></script>
+        <script src="src/app.js"></script>
+    </body>
+</html>
