@@ -1263,7 +1263,7 @@
                     Math.min(e.clientY, blockRect.bottom - 13),
                 );
                 floatingAdd.style.top = y - 13 + "px";
-                floatingAdd.style.left = blockRect.left - 34 + "px";
+                floatingAdd.style.left = blockRect.left + 9 + "px";  // inside the .ln gutter so the cursor stays over the block
                 requestAnimationFrame(() => floatingAdd.classList.add("show"));
             });
             floatingAdd.addEventListener("click", () => {

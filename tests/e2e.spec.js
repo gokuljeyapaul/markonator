@@ -169,8 +169,8 @@ test.describe("UI", () => {
   }) => {
     // hover a content block so the cursor-following + appears
     await page.locator(".block").first().hover();
-    await page.waitForTimeout(150);
-    await page.locator("#floatingAdd").click({ force: true });
+    await page.locator("#floatingAdd").waitFor({ state: "visible" });
+    await page.locator("#floatingAdd").click();
     await expect(page.locator("#composer")).toBeVisible();
     await page.locator("#cText").fill("Use a typed enum like `THEME_LIGHT`.");
     await page.locator("#cSubmit").click();
